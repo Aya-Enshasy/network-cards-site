@@ -35,16 +35,30 @@
         $defaultLogo = asset('images/net-zone-logo.png');
         $ownerName = auth()->check() ? auth()->user()->name : '';
         $primaryNetwork = null;
+        $notificationOrders = collect();
 
         if ($usesOwnerShell) {
             $primaryNetwork = auth()->user()->isSuperAdmin()
                 ? \App\Models\Network::query()->orderBy('name')->first()
                 : auth()->user()->networks()->orderBy('name')->first();
+
+            $networkIds = auth()->user()->isSuperAdmin()
+                ? \App\Models\Network::query()->pluck('id')
+                : auth()->user()->networks()->pluck('id');
+
+            $notificationOrders = \App\Models\Order::query()
+                ->whereIn('network_id', $networkIds)
+                ->where('order_status', 'pending')
+                ->with('network')
+                ->latest()
+                ->limit(5)
+                ->get();
         }
 
         $brandLogo = $primaryNetwork?->logo ? asset('storage/'.$primaryNetwork->logo) : $defaultLogo;
         $ownerAvatar = auth()->check() && auth()->user()->avatar ? asset('storage/'.auth()->user()->avatar) : $brandLogo;
         $profileUrl = route('dashboard.inventory.index').'#company-profile';
+        $notificationCount = $notificationOrders->count();
     @endphp
 
     @if($usesOwnerShell)
@@ -83,17 +97,45 @@
                     </div>
 
                     <div class="owner-topbar-actions edu-profile">
-                        <button class="edu-bell" type="button" aria-label="التنبيهات">
-                            <i data-lucide="bell"></i>
-                            <span>2</span>
-                        </button>
-                        <a class="edu-profile-link" href="{{ $profileUrl }}" aria-label="تعديل بروفايل الشركة">
-                            <span class="owner-avatar edu-avatar"><img src="{{ $ownerAvatar }}" alt=""></span>
-                            <div class="edu-user-copy">
-                                <strong>{{ $ownerName }}</strong>
-                                <small>تعديل البروفايل</small>
+                        <div class="edu-notifications" data-notifications>
+                            <button class="edu-bell" type="button" aria-label="التنبيهات" aria-expanded="false" aria-controls="owner-notifications" data-notification-toggle>
+                                <i data-lucide="bell"></i>
+                                @if($notificationCount > 0)
+                                    <span>{{ $notificationCount }}</span>
+                                @endif
+                            </button>
+
+                            <div class="edu-notification-panel" id="owner-notifications" data-notification-panel hidden>
+                                <div class="edu-notification-head">
+                                    <strong>التنبيهات</strong>
+                                    <small>{{ $notificationCount }} جديد</small>
+                                </div>
+
+                                <div class="edu-notification-list">
+                                    @forelse($notificationOrders as $order)
+                                        <a class="edu-notification-item" href="{{ route('dashboard.orders.show', $order) }}">
+                                            <span><i data-lucide="receipt-text"></i></span>
+                                            <div>
+                                                <strong>طلب جديد {{ $order->order_number }}</strong>
+                                                <small>{{ $order->network?->name }} / {{ number_format($order->total_amount, 2) }} NIS</small>
+                                            </div>
+                                        </a>
+                                    @empty
+                                        <div class="edu-notification-empty">لا توجد تنبيهات حاليا</div>
+                                    @endforelse
+                                </div>
                             </div>
+                        </div>
+
+                        <a class="owner-avatar edu-avatar" href="{{ $profileUrl }}" aria-label="تعديل بروفايل الشركة">
+                            <img src="{{ $ownerAvatar }}" alt="">
                         </a>
+
+                        <div class="edu-user-copy">
+                            <strong>{{ $ownerName }}</strong>
+                            <small>#{{ str_pad((string) auth()->id(), 5, '0', STR_PAD_LEFT) }}</small>
+                        </div>
+
                         <form action="{{ route('logout') }}" method="POST">
                             @csrf
                             <button class="edu-logout" type="submit" aria-label="تسجيل الخروج">

@@ -1,43 +1,23 @@
 @extends('layouts.app', ['title' => 'دخول صاحب الشركة'])
 
 @section('content')
-    <main class="owner-login-shell">
-        <section class="login-art">
-            <div class="login-brand">
-                <span class="brand-image"><img src="{{ asset('images/net-zone-logo.png') }}" alt=""></span>
-                <div>
-                    <strong>Net Zone</strong>
-                    <small>بوابة صاحب الشركة</small>
-                </div>
-            </div>
-
-            <div class="login-art-copy">
-                <span class="eyebrow">رابط منفصل للإدارة</span>
-                <h1>إدارة الطلبات والمخزون بدون تعقيد.</h1>
-                <p>الزبائن يدخلون المتجر، وصاحب الشركة يدخل من هنا فقط.</p>
-            </div>
-
-            <div class="login-preview-card">
-                <div class="mini-bars">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </div>
-                <strong>استيراد، موافقة، تسليم</strong>
-                <small>مسار واحد واضح.</small>
-            </div>
-        </section>
-
-        <section class="login-form-wrap">
-            <form action="{{ route('login.submit') }}" method="POST" class="login-card">
+    <main class="owner-login-shell centered-login-shell">
+        <section class="owner-login-container">
+            <form action="{{ route('login.submit') }}" method="POST" class="login-card centered-login-card">
                 @csrf
 
-                <div class="login-card-head">
-                    <span class="owner-brand-mark brand-image"><img src="{{ asset('images/net-zone-logo.png') }}" alt=""></span>
+                <div class="center-login-brand">
+                    <span class="brand-image login-brand-logo"><img src="{{ asset('images/net-zone-logo.png') }}" alt=""></span>
                     <div>
-                        <p>بوابة المالك</p>
-                        <h2>تسجيل الدخول</h2>
+                        <strong>Net Zone</strong>
+                        <small>بوابة صاحب الشركة</small>
+                    </div>
+                </div>
+
+                <div class="login-card-head">
+                    <div>
+                        <p>تسجيل الدخول</p>
+                        <h2>أهلا بعودتك</h2>
                     </div>
                 </div>
 
@@ -60,11 +40,6 @@
                     <i data-lucide="log-in"></i>
                     دخول
                 </button>
-
-                <div class="login-demo">
-                    <strong>حساب التجربة</strong>
-                    <span>owner@gptnet.test / password</span>
-                </div>
             </form>
         </section>
     </main>

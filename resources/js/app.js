@@ -186,6 +186,71 @@ function setupCopyActions() {
     });
 }
 
+function playNotificationTone() {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+
+    if (!AudioContext) {
+        return;
+    }
+
+    const context = new AudioContext();
+    const gain = context.createGain();
+    gain.connect(context.destination);
+    gain.gain.setValueAtTime(0.0001, context.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.06, context.currentTime + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.28);
+
+    [880, 1174].forEach((frequency, index) => {
+        const oscillator = context.createOscillator();
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(frequency, context.currentTime + (index * 0.08));
+        oscillator.connect(gain);
+        oscillator.start(context.currentTime + (index * 0.08));
+        oscillator.stop(context.currentTime + 0.18 + (index * 0.08));
+    });
+
+    window.setTimeout(() => context.close(), 420);
+}
+
+function setupNotifications() {
+    const wrapper = document.querySelector('[data-notifications]');
+
+    if (!wrapper) {
+        return;
+    }
+
+    const toggle = wrapper.querySelector('[data-notification-toggle]');
+    const panel = wrapper.querySelector('[data-notification-panel]');
+
+    if (!toggle || !panel) {
+        return;
+    }
+
+    const setOpen = (open, withSound = false) => {
+        panel.hidden = !open;
+        toggle.setAttribute('aria-expanded', String(open));
+
+        if (open && withSound) {
+            playNotificationTone();
+        }
+    };
+
+    toggle.addEventListener('click', (event) => {
+        event.stopPropagation();
+        setOpen(panel.hidden, true);
+    });
+
+    panel.addEventListener('click', (event) => event.stopPropagation());
+
+    document.addEventListener('click', () => setOpen(false));
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            setOpen(false);
+        }
+    });
+}
+
 function setupIcons() {
     createIcons({
         icons: {
@@ -229,6 +294,7 @@ function boot() {
     setupCart();
     setupOrderAccess();
     setupCopyActions();
+    setupNotifications();
     setupIcons();
     Alpine.start();
 }

@@ -2272,6 +2272,103 @@ body:has(.edu-shell) {
     box-shadow: 0 14px 30px rgba(244, 105, 72, 0.18);
 }
 
+.edu-notifications {
+    position: relative;
+    flex: 0 0 auto;
+}
+
+.edu-notification-panel {
+    position: absolute;
+    inset-block-start: calc(100% + 0.65rem);
+    inset-inline-end: 0;
+    z-index: 60;
+    width: min(20rem, calc(100vw - 2rem));
+    overflow: hidden;
+    border: 1px solid var(--edu-line);
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 24px 60px rgba(17, 24, 39, 0.16);
+}
+
+.edu-notification-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid var(--edu-line);
+    padding: 0.85rem 1rem;
+}
+
+.edu-notification-head strong {
+    color: var(--edu-ink);
+    font-size: 0.9rem;
+    font-weight: 950;
+}
+
+.edu-notification-head small {
+    color: var(--edu-muted);
+    font-size: 0.72rem;
+    font-weight: 850;
+}
+
+.edu-notification-list {
+    display: grid;
+    max-height: 18rem;
+    overflow-y: auto;
+}
+
+.edu-notification-item {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.7rem;
+    align-items: center;
+    border-bottom: 1px solid #f2f4f8;
+    padding: 0.85rem 1rem;
+    color: var(--edu-ink);
+}
+
+.edu-notification-item:hover {
+    background: #f8fbff;
+}
+
+.edu-notification-item > span {
+    display: grid;
+    width: 2rem;
+    height: 2rem;
+    place-items: center;
+    border-radius: 8px;
+    background: #eef5ff;
+    color: var(--edu-primary-dark);
+}
+
+.edu-notification-item strong,
+.edu-notification-item small {
+    display: block;
+}
+
+.edu-notification-item strong {
+    overflow: hidden;
+    font-size: 0.82rem;
+    font-weight: 950;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.edu-notification-item small {
+    margin-top: 0.16rem;
+    color: var(--edu-muted);
+    font-size: 0.72rem;
+    font-weight: 850;
+}
+
+.edu-notification-empty {
+    padding: 1.15rem 1rem;
+    color: var(--edu-muted);
+    font-size: 0.82rem;
+    font-weight: 850;
+    text-align: center;
+}
+
 .edu-user-copy {
     min-width: 0;
 }
@@ -2958,6 +3055,296 @@ body:has(.edu-shell) {
 
     .edu-nav-link span {
         display: none;
+    }
+}
+
+/* Centered login and global motion */
+.centered-login-shell {
+    display: grid;
+    min-height: 100vh;
+    place-items: center;
+    padding: 1rem;
+    background:
+        radial-gradient(circle at 50% 12%, rgba(255, 255, 255, 0.68), transparent 30%),
+        linear-gradient(135deg, #ffd09d 0%, #ffdfbd 48%, #fff2df 100%);
+}
+
+.owner-login-container {
+    display: grid;
+    width: min(100%, 28rem);
+    place-items: center;
+}
+
+.centered-login-card {
+    width: 100%;
+    padding: 1.25rem;
+    animation: login-pop 520ms cubic-bezier(.2, .8, .2, 1) both;
+}
+
+.center-login-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding-bottom: 0.85rem;
+    text-align: right;
+}
+
+.center-login-brand strong,
+.center-login-brand small {
+    display: block;
+}
+
+.center-login-brand strong {
+    color: var(--ink);
+    font-size: 1.25rem;
+    font-weight: 950;
+}
+
+.center-login-brand small {
+    margin-top: 0.1rem;
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 850;
+}
+
+.login-brand-logo {
+    width: 3rem;
+    height: 3rem;
+}
+
+.centered-login-card .login-card-head {
+    justify-content: center;
+    text-align: center;
+}
+
+.centered-login-card .login-card-head h2 {
+    font-size: 1.35rem;
+}
+
+.owner-sidebar {
+    animation: slide-from-right 520ms cubic-bezier(.2, .8, .2, 1) both;
+}
+
+.owner-workspace,
+.shop-stage {
+    animation: soft-rise 520ms cubic-bezier(.2, .8, .2, 1) both;
+}
+
+.edu-topbar,
+.shop-nav {
+    animation: fade-down 480ms cubic-bezier(.2, .8, .2, 1) 70ms both;
+}
+
+.edu-page,
+.shop-main,
+.customer-summary,
+.premium-shell > div {
+    animation: soft-rise 520ms cubic-bezier(.2, .8, .2, 1) 120ms both;
+}
+
+.edu-card,
+.edu-metric,
+.customer-package,
+.tool-panel,
+.stat-card,
+.payment-card,
+.code-box {
+    animation: card-in 500ms cubic-bezier(.2, .8, .2, 1) both;
+    transition:
+        transform 180ms ease,
+        box-shadow 180ms ease,
+        border-color 180ms ease,
+        background-color 180ms ease;
+}
+
+.edu-card:nth-of-type(2),
+.edu-metric:nth-child(2),
+.customer-package:nth-child(2),
+.stat-card:nth-child(2) {
+    animation-delay: 70ms;
+}
+
+.edu-card:nth-of-type(3),
+.edu-metric:nth-child(3),
+.customer-package:nth-child(3),
+.stat-card:nth-child(3) {
+    animation-delay: 120ms;
+}
+
+.edu-card:nth-of-type(4),
+.edu-metric:nth-child(4),
+.stat-card:nth-child(4) {
+    animation-delay: 170ms;
+}
+
+.edu-card:hover,
+.edu-metric:hover,
+.tool-panel:hover,
+.customer-package:hover {
+    transform: translateY(-2px);
+}
+
+.btn,
+.edu-nav-link,
+.edu-bell,
+.edu-avatar,
+.edu-logout,
+.shop-actions a,
+.qty-control button {
+    transition:
+        transform 160ms ease,
+        box-shadow 160ms ease,
+        background-color 160ms ease,
+        color 160ms ease,
+        border-color 160ms ease;
+}
+
+.btn:active,
+.edu-nav-link:active,
+.edu-bell:active,
+.edu-avatar:active,
+.edu-logout:active,
+.qty-control button:active {
+    transform: scale(0.97);
+}
+
+.edu-table tbody tr {
+    animation: table-row-in 360ms ease both;
+}
+
+.edu-table tbody tr:nth-child(2) { animation-delay: 20ms; }
+.edu-table tbody tr:nth-child(3) { animation-delay: 40ms; }
+.edu-table tbody tr:nth-child(4) { animation-delay: 60ms; }
+.edu-table tbody tr:nth-child(5) { animation-delay: 80ms; }
+
+@keyframes soft-rise {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fade-down {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slide-from-right {
+    from {
+        opacity: 0;
+        transform: translateX(18px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes card-in {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.985);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes login-pop {
+    from {
+        opacity: 0;
+        transform: translateY(18px) scale(0.975);
+        filter: blur(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+    }
+}
+
+@keyframes table-row-in {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 1ms !important;
+    }
+}
+
+/* Final login positioning override */
+body:has(.centered-login-shell) {
+    overflow: hidden;
+    background:
+        linear-gradient(90deg, rgba(63, 109, 246, 0.06) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(63, 109, 246, 0.06) 1px, transparent 1px),
+        linear-gradient(135deg, #f7fbff 0%, #eef4fb 48%, #fff8eb 100%);
+    background-size: 42px 42px, 42px 42px, auto;
+}
+
+.centered-login-shell.owner-login-shell {
+    display: flex !important;
+    width: 100vw;
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+    grid-template-columns: none !important;
+    margin: 0;
+    padding: 1.25rem;
+    background: transparent;
+}
+
+.centered-login-shell .owner-login-container {
+    display: grid;
+    width: min(100%, 28rem);
+    min-height: auto;
+    place-items: center;
+    margin: 0 auto;
+}
+
+.centered-login-shell .centered-login-card {
+    width: 100%;
+    margin: 0 auto;
+    border: 1px solid rgba(226, 232, 240, 0.95);
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 28px 70px rgba(23, 32, 51, 0.12);
+    backdrop-filter: blur(14px);
+}
+
+@media (max-width: 760px) {
+    .centered-login-shell.owner-login-shell {
+        padding: 1rem;
     }
 }
 
