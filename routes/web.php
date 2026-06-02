@@ -11,6 +11,7 @@ use App\Http\Controllers\StoreController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [StoreController::class, 'home'])->name('store.home');
+Route::get('/owner', fn () => auth()->check() ? redirect()->route('dashboard') : redirect()->route('login'))->name('owner.entry');
 Route::get('/networks/{network:slug}', [StoreController::class, 'show'])->name('store.network');
 Route::post('/checkout/start', [StoreController::class, 'startCheckout'])->name('checkout.start');
 Route::get('/checkout/{network:slug}', [StoreController::class, 'checkout'])->name('checkout.show');
@@ -23,6 +24,7 @@ Route::get('/orders/{order:access_token}', [OrderController::class, 'show'])->mi
 
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::get('/owner/login', [AuthController::class, 'showLogin'])->name('owner.login');
     Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
 });
 

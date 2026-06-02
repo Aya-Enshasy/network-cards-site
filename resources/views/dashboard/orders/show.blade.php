@@ -1,6 +1,11 @@
 @extends('layouts.app', ['title' => 'طلب '.$order->order_number])
 
 @section('content')
+    @php
+        $paymentLabels = ['pending' => 'قيد المراجعة', 'paid' => 'مدفوع', 'rejected' => 'مرفوض'];
+        $orderLabels = ['pending' => 'بانتظار المراجعة', 'approved' => 'مقبول', 'completed' => 'مكتمل', 'rejected' => 'مرفوض'];
+    @endphp
+
     <main class="premium-shell min-h-screen px-4 py-7 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-6xl">
             <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -27,7 +32,7 @@
                 </div>
                 <div class="stat-card stat-sun">
                     <span>الدفع</span>
-                    <strong>{{ $order->payment_status }}</strong>
+                    <strong>{{ $paymentLabels[$order->payment_status] ?? $order->payment_status }}</strong>
                     <small>حالة وصل الدفع</small>
                 </div>
                 <div class="stat-card stat-rose">
@@ -70,11 +75,11 @@
                                     <div class="code-box">
                                         <div class="delivered-card-fields">
                                             <div>
-                                                <small>Username / رقم البطاقة</small>
+                                                <small>رقم البطاقة</small>
                                                 <strong>{{ $code }}</strong>
                                             </div>
                                             <div>
-                                                <small>Password / كلمة السر</small>
+                                                <small>كلمة السر</small>
                                                 <strong>{{ $password }}</strong>
                                             </div>
                                         </div>

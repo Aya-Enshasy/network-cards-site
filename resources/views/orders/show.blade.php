@@ -9,7 +9,7 @@
                 $code = $card->pivot->card_code ?: $card->card_code;
                 $password = $card->pivot->card_password ?: $card->card_password;
 
-                return trim('Username: '.$code.' | Password: '.$password);
+                return trim('رقم البطاقة: '.$code.' | كلمة السر: '.$password);
             })
             ->filter()
             ->values();
@@ -96,15 +96,15 @@
                         @foreach($order->deliveredCards as $card)
                             @php($code = $card->pivot->card_code ?: $card->card_code)
                             @php($password = $card->pivot->card_password ?: $card->card_password)
-                            @php($copyText = trim('Username: '.$code.' | Password: '.$password))
+                            @php($copyText = trim('رقم البطاقة: '.$code.' | كلمة السر: '.$password))
                             <div class="code-box premium-code" data-copy-line="{{ $copyText }}">
                                 <div class="delivered-card-fields">
                                     <div>
-                                        <small>Username / رقم البطاقة</small>
+                                        <small>رقم البطاقة</small>
                                         <strong data-card-code>{{ $code }}</strong>
                                     </div>
                                     <div>
-                                        <small>Password / كلمة السر</small>
+                                        <small>كلمة السر</small>
                                         <strong data-card-code>{{ $password }}</strong>
                                     </div>
                                 </div>
@@ -118,7 +118,7 @@
                     </div>
                 @else
                     <div class="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">
-                        بانتظار مراجعة الدفع. ستظهر هنا بيانات البطاقة بعد موافقة صاحب الشبكة: Username وكلمة السر، ولن يتم خصم أي بطاقة من المخزون قبل الموافقة.
+                        بانتظار مراجعة الدفع. ستظهر هنا بيانات البطاقة بعد موافقة صاحب الشبكة: رقم البطاقة وكلمة السر، ولن يتم خصم أي بطاقة من المخزون قبل الموافقة.
                     </div>
                 @endif
             </section>

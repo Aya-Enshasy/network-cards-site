@@ -13,7 +13,7 @@
                     <p class="text-sm font-black text-violet-600">{{ $network->name }}</p>
                     <h1 class="mt-2 text-4xl font-black text-slate-950">إتمام الطلب والدفع</h1>
                     <p class="mt-3 max-w-2xl leading-7 text-slate-600">
-                        لن يتم حجز أو بيع أي بطاقة الآن. سيتم تسليم Username وكلمة السر فقط بعد مراجعة الوصل والموافقة.
+                        لن يتم حجز أو بيع أي بطاقة الآن. سيتم تسليم رقم البطاقة وكلمة السر فقط بعد مراجعة الوصل والموافقة.
                     </p>
                 </div>
 

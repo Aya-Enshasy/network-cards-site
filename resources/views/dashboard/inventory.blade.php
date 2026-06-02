@@ -2,324 +2,265 @@
 
 @section('content')
     @php
+        $mainPackage = $packages->first();
         $totalAvailable = $packages->sum('available_cards_count');
         $totalSold = $packages->sum('sold_cards_count');
         $totalCards = $packages->sum('cards_count');
+        $latestImport = $imports->first();
+        $defaultLogo = asset('images/net-zone-logo.png');
+        $networkLogo = $network?->logo ? asset('storage/'.$network->logo) : $defaultLogo;
+        $ownerAvatar = auth()->user()->avatar ? asset('storage/'.auth()->user()->avatar) : $networkLogo;
     @endphp
 
-    <main class="premium-shell min-h-screen px-4 py-7 sm:px-6 lg:px-8">
-        <div class="mx-auto max-w-7xl">
-            <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                    <p class="text-sm font-black text-violet-600">بطاقات الهوتسبوت</p>
-                    <h1 class="text-4xl font-black text-slate-950">المخزون والباقات</h1>
-                </div>
-                @if($network)
-                    <a class="btn btn-glass" href="{{ route('store.network', $network->slug) }}">
-                        <i data-lucide="external-link"></i>
-                        عرض المتجر
+    <main class="edu-page inventory-page">
+        @if($networks->isEmpty())
+            <section class="edu-card edu-empty">
+                <span class="edu-soft-icon"><i data-lucide="wifi-off"></i></span>
+                <h2>لا توجد شبكات مرتبطة بهذا الحساب.</h2>
+            </section>
+        @else
+            <section class="edu-overview">
+                <div class="edu-section-title">
+                    <div>
+                        <span>نظرة عامة</span>
+                        <h2>{{ $network?->name }}</h2>
+                    </div>
+                    <a class="edu-inline-link" href="{{ route('store.home') }}">
+                        <i data-lucide="store"></i>
+                        فتح المتجر
                     </a>
-                @endif
-            </div>
-
-            @if($networks->isEmpty())
-                <div class="glass-panel p-8 text-center">
-                    <h2 class="text-xl font-black text-slate-950">لا توجد شبكات مرتبطة بهذا الحساب.</h2>
-                </div>
-            @else
-                <div class="mb-5 flex gap-2 overflow-x-auto">
-                    @foreach($networks as $item)
-                        <a class="network-tab-light {{ $network?->is($item) ? 'network-tab-light-active' : '' }}" href="{{ route('dashboard.inventory.index', ['network_id' => $item->id]) }}">
-                            {{ $item->name }}
-                        </a>
-                    @endforeach
                 </div>
 
-                <section class="mb-6 grid gap-4 sm:grid-cols-3">
-                    <div class="stat-card stat-mint">
-                        <span>المتاح</span>
+                <div class="edu-metrics">
+                    <article class="edu-metric metric-green">
+                        <span><i data-lucide="ticket-check"></i></span>
+                        <p>بطاقات متاحة</p>
                         <strong>{{ $totalAvailable }}</strong>
-                        <small>بطاقات جاهزة للبيع</small>
-                    </div>
-                    <div class="stat-card stat-sun">
-                        <span>المستعملة</span>
+                    </article>
+                    <article class="edu-metric metric-coral">
+                        <span><i data-lucide="badge-check"></i></span>
+                        <p>بطاقات مستعملة</p>
                         <strong>{{ $totalSold }}</strong>
-                        <small>بطاقات سُلّمت بعد الدفع</small>
-                    </div>
-                    <div class="stat-card stat-lilac">
-                        <span>إجمالي المخزون</span>
+                    </article>
+                    <article class="edu-metric metric-blue">
+                        <span><i data-lucide="file-spreadsheet"></i></span>
+                        <p>إجمالي المستورد</p>
                         <strong>{{ $totalCards }}</strong>
-                        <small>داخل {{ $packages->count() }} باقة</small>
-                    </div>
-                </section>
+                    </article>
+                    <article class="edu-metric metric-peach">
+                        <span><i data-lucide="package-open"></i></span>
+                        <p>أنواع البطاقات</p>
+                        <strong>{{ $packages->count() }}</strong>
+                    </article>
+                </div>
+            </section>
 
-                <section class="grid gap-6 xl:grid-cols-[1fr_410px]">
-                    <div class="min-w-0 space-y-6">
-                        <div class="tool-panel overflow-hidden p-0">
-                            <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-                                <div>
-                                    <p class="text-xs font-black text-violet-600">إدارة البيع</p>
-                                    <h2 class="text-xl font-black text-slate-950">الباقات</h2>
-                                </div>
-                                <span class="badge">{{ $packages->where('active', true)->count() }} فعالة</span>
+            <section class="edu-layout">
+                <div class="edu-main-column">
+                    <section class="edu-card edu-table-card cards-table-card">
+                        <div class="edu-card-head">
+                            <div>
+                                <span>جدول صاحب المشروع</span>
+                                <h2>البطاقات المستوردة</h2>
+                                <p>كل بطاقة من ملف Excel تظهر هنا مع حالتها. المستعمل يظهر بجانبه رقم الطلب واسم العميل.</p>
                             </div>
-                            <div class="overflow-x-auto">
-                                <table class="data-table">
-                                    <thead>
+                            <span class="edu-count">{{ $cards->count() }} بطاقة</span>
+                        </div>
+
+                        <div class="edu-table-scroll">
+                            <table class="edu-table">
+                                <thead>
+                                    <tr>
+                                        <th>رقم البطاقة</th>
+                                        <th>كلمة السر</th>
+                                        <th>نوع البطاقة</th>
+                                        <th>الحالة</th>
+                                        <th>الطلب المرتبط</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($cards as $card)
                                         <tr>
-                                            <th>الباقة</th>
-                                            <th>المدة</th>
-                                            <th>السعر</th>
-                                            <th>المتاح</th>
-                                            <th>المستعمل</th>
-                                            <th>الحالة</th>
-                                            <th>الإجراءات</th>
+                                            <td>
+                                                <div class="edu-card-code">
+                                                    <span class="edu-row-icon"><i data-lucide="ticket"></i></span>
+                                                    <strong dir="ltr">{{ $card->card_code }}</strong>
+                                                </div>
+                                            </td>
+                                            <td><span class="number-cell" dir="ltr">{{ $card->card_password }}</span></td>
+                                            <td>{{ $card->package?->name ?? $card->package_label }}</td>
+                                            <td>
+                                                @if($card->status === 'sold')
+                                                    <span class="edu-status status-used">مستعملة</span>
+                                                @else
+                                                    <span class="edu-status status-ready">متاحة</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($card->used_order_number)
+                                                    <strong>{{ $card->used_order_number }}</strong>
+                                                    <small class="edu-muted-line">{{ $card->used_customer_name }}</small>
+                                                @else
+                                                    <span class="text-slate-400">-</span>
+                                                @endif
+                                            </td>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        @forelse($packages as $package)
-                                            <tr>
-                                                <td class="font-black">{{ $package->name }}</td>
-                                                <td>{{ $package->duration_hours }} ساعة</td>
-                                                <td>{{ number_format($package->price, 2) }} NIS</td>
-                                                <td>{{ $package->available_cards_count }}</td>
-                                                <td>{{ $package->sold_cards_count }}</td>
-                                                <td><span class="badge">{{ $package->active ? 'فعالة' : 'مخفية' }}</span></td>
-                                                <td>
-                                                    <details class="package-details">
-                                                        <summary>تعديل</summary>
-                                                        <form action="{{ route('dashboard.packages.update', $package) }}" method="POST" class="mt-3 grid min-w-72 gap-3">
-                                                            @csrf
-                                                            @method('PATCH')
-                                                            <input name="name" value="{{ $package->name }}" required>
-                                                            <div class="grid grid-cols-2 gap-2">
-                                                                <input name="duration_hours" type="number" min="1" value="{{ $package->duration_hours }}" required>
-                                                                <input name="price" type="number" step="0.01" min="0" value="{{ $package->price }}" required>
-                                                            </div>
-                                                            <input name="speed" value="{{ $package->speed }}">
-                                                            <textarea name="description" rows="2">{{ $package->description }}</textarea>
-                                                            <label class="flex items-center gap-2 text-xs font-black text-slate-600">
-                                                                <input type="checkbox" name="active" value="1" @checked($package->active)>
-                                                                فعالة في المتجر
-                                                            </label>
-                                                            <button class="btn btn-primary" type="submit">حفظ</button>
-                                                        </form>
-                                                        <form action="{{ route('dashboard.packages.destroy', $package) }}" method="POST" class="mt-2">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button class="btn btn-danger w-full" type="submit">حذف أو إخفاء</button>
-                                                        </form>
-                                                    </details>
-                                                </td>
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="7" class="text-center text-slate-500">أضف باقة للبدء.</td>
-                                            </tr>
-                                        @endforelse
-                                    </tbody>
-                                </table>
+                                    @empty
+                                        <tr>
+                                            <td colspan="5" class="text-center text-slate-500">
+                                                لا توجد بطاقات مستوردة بعد. ارفع ملف Excel من صندوق الاستيراد.
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section class="edu-card edu-package-card">
+                        <div class="edu-card-head">
+                            <div>
+                                <span>النوع المعروض للزبون</span>
+                                <h2>نوع بطاقة واحد فقط</h2>
+                                <p>المتجر يعرض هذا النوع فقط، وأي ملف Excel جديد سيتم ربطه به تلقائيا.</p>
+                            </div>
+                            <span class="edu-count">10 ساعات</span>
+                        </div>
+
+                        @if($mainPackage)
+                            <div class="edu-one-package">
+                                <span class="edu-package-art"><i data-lucide="ticket"></i></span>
+                                <div>
+                                    <h3>{{ $mainPackage->name }}</h3>
+                                    <p>{{ $mainPackage->duration_hours }} ساعات / {{ $mainPackage->speed }} / {{ number_format($mainPackage->price, 2) }} NIS</p>
+                                </div>
+                                <strong>{{ $mainPackage->available_cards_count }} متاحة</strong>
+                            </div>
+                        @endif
+                    </section>
+                </div>
+
+                <aside class="edu-side-column">
+                    <section class="edu-card edu-profile-card" id="company-profile">
+                        <div class="edu-card-head compact-head">
+                            <div>
+                                <span>البروفايل</span>
+                                <h2>بيانات الشركة</h2>
                             </div>
                         </div>
 
-                        <div class="tool-panel overflow-hidden p-0">
-                            <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-                                <div>
-                                    <p class="text-xs font-black text-violet-600">البطاقات الفعلية</p>
-                                    <h2 class="text-xl font-black text-slate-950">جدول البطاقات</h2>
-                                </div>
-                                <span class="badge">آخر {{ $cards->count() }} بطاقة</span>
-                            </div>
-                            <div class="overflow-x-auto">
-                                <table class="data-table">
-                                    <thead>
-                                        <tr>
-                                            <th>رقم البطاقة / Username</th>
-                                            <th>كلمة السر</th>
-                                            <th>الباقة</th>
-                                            <th>نص الملف</th>
-                                            <th>الحالة</th>
-                                            <th>الطلب</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @forelse($cards as $card)
-                                            <tr>
-                                                <td dir="ltr" class="font-black">{{ $card->card_code }}</td>
-                                                <td dir="ltr">{{ $card->card_password }}</td>
-                                                <td>{{ $card->package?->name }}</td>
-                                                <td dir="ltr">{{ $card->package_label ?: '—' }}</td>
-                                                <td>
-                                                    @if($card->status === 'sold')
-                                                        <span class="badge badge-sold">مستعملة</span>
-                                                    @else
-                                                        <span class="badge badge-available">متاحة</span>
-                                                    @endif
-                                                </td>
-                                                <td>
-                                                    @if($card->used_order_number)
-                                                        <span class="font-black">{{ $card->used_order_number }}</span>
-                                                        <span class="block text-xs text-slate-500">{{ $card->used_customer_name }}</span>
-                                                    @else
-                                                        <span class="text-slate-400">—</span>
-                                                    @endif
-                                                </td>
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="6" class="text-center text-slate-500">لم يتم رفع بطاقات بعد.</td>
-                                            </tr>
-                                        @endforelse
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <form action="{{ route('dashboard.packages.store') }}" method="POST" class="glass-panel space-y-4 p-5">
+                        <form action="{{ route('dashboard.payment.update') }}" method="POST" enctype="multipart/form-data" class="edu-upload-form profile-form">
                             @csrf
                             <input type="hidden" name="network_id" value="{{ $network->id }}">
-                            <div class="flex items-center gap-3">
-                                <span class="icon-chip"><i data-lucide="plus"></i></span>
-                                <h2 class="text-xl font-black text-slate-950">إضافة باقة</h2>
+                            <input type="hidden" name="wallet_number" value="{{ $network->wallet_number }}">
+                            <input type="hidden" name="bank_account" value="{{ $network->bank_account }}">
+                            <input type="hidden" name="bank_transfer_details" value="{{ $network->bank_transfer_details }}">
+                            <input type="hidden" name="description" value="{{ $network->description }}">
+
+                            <div class="profile-preview">
+                                <img src="{{ $ownerAvatar }}" alt="أفاتار صاحب الشركة">
+                                <div>
+                                    <strong>{{ auth()->user()->name }}</strong>
+                                    <span>{{ $network->name }}</span>
+                                </div>
                             </div>
-                            <div class="grid gap-4 md:grid-cols-2">
-                                <label class="field">
-                                    <span>اسم الباقة</span>
-                                    <input name="name" placeholder="بطاقة 2 شيكل" required>
-                                </label>
-                                <label class="field">
-                                    <span>المدة بالساعات</span>
-                                    <input name="duration_hours" type="number" min="1" required>
-                                </label>
-                                <label class="field">
-                                    <span>السعر</span>
-                                    <input name="price" type="number" step="0.01" min="0" required>
-                                </label>
-                                <label class="field">
-                                    <span>السرعة</span>
-                                    <input name="speed" placeholder="3 ميجا">
-                                </label>
-                            </div>
+
                             <label class="field">
-                                <span>الوصف</span>
-                                <textarea name="description" rows="3"></textarea>
+                                <span>اسم الشبكة</span>
+                                <input name="name" value="{{ old('name', $network->name) }}" required>
                             </label>
-                            <label class="flex items-center gap-2 text-sm font-black text-slate-600">
-                                <input type="checkbox" name="active" value="1" checked>
-                                فعالة في المتجر
+
+                            <label class="field">
+                                <span>اسم صاحب الشركة</span>
+                                <input name="owner_name" value="{{ old('owner_name', auth()->user()->name) }}" required>
                             </label>
-                            <button class="btn btn-primary" type="submit">حفظ الباقة</button>
+
+                            <div class="profile-files">
+                                <label class="field">
+                                    <span>أفاتار</span>
+                                    <input name="avatar" type="file" accept="image/*">
+                                </label>
+                                <label class="field">
+                                    <span>لوغو</span>
+                                    <input name="logo" type="file" accept="image/*">
+                                </label>
+                            </div>
+
+                            <button class="btn btn-primary w-full" type="submit">
+                                <i data-lucide="save"></i>
+                                حفظ البروفايل
+                            </button>
                         </form>
+                    </section>
 
-                        <div class="glass-panel p-5">
-                            <div class="flex items-center justify-between">
-                                <h2 class="text-xl font-black text-slate-950">سجل الاستيراد</h2>
-                                <span class="icon-chip"><i data-lucide="history"></i></span>
+                    <section class="edu-card edu-upload-card">
+                        <div class="edu-card-head">
+                            <div>
+                                <span>استيراد جديد</span>
+                                <h2>رفع ملف Excel</h2>
+                                <p>Username / Password / Package</p>
                             </div>
-                            <div class="mt-4 space-y-3">
-                                @forelse($imports as $import)
-                                    <div class="summary-line">
-                                        <div>
-                                            <strong>{{ $import->file_name }}</strong>
-                                            <span>{{ $import->package?->name }} · {{ $import->created_at->format('Y-m-d H:i') }}</span>
-                                        </div>
-                                        <div class="text-left text-xs font-black text-slate-500">
-                                            <div>نجح: {{ $import->imported_count }}</div>
-                                            <div>مكرر: {{ $import->duplicate_count }} · فشل: {{ $import->failed_count }}</div>
-                                        </div>
-                                    </div>
-                                @empty
-                                    <p class="text-sm text-slate-500">لا توجد عمليات استيراد بعد.</p>
-                                @endforelse
-                            </div>
+                            <span class="edu-soft-icon"><i data-lucide="upload-cloud"></i></span>
                         </div>
-                    </div>
 
-                    <aside class="space-y-6">
-                        <form action="{{ route('dashboard.cards.import') }}" method="POST" enctype="multipart/form-data" class="upload-panel space-y-4 p-5">
+                        <form action="{{ route('dashboard.cards.import') }}" method="POST" enctype="multipart/form-data" class="edu-upload-form">
                             @csrf
                             <input type="hidden" name="network_id" value="{{ $network->id }}">
-                            <div class="flex items-start gap-3">
-                                <span class="icon-chip"><i data-lucide="file-spreadsheet"></i></span>
-                                <div>
-                                    <p class="text-xs font-black text-violet-600">صاحب الشبكة</p>
-                                    <h2 class="text-2xl font-black text-slate-950">رفع بطاقات الشبكة</h2>
-                                    <p class="mt-2 text-sm leading-6 text-slate-500">
-                                        اختر الباقة من النظام، ثم ارفع ملف Excel. البرنامج يقرأ كل بطاقة من 3 صفوف:
-                                        <strong>Username</strong>
-                                        ثم
-                                        <strong>Password</strong>
-                                        ثم
-                                        <strong>Package</strong>.
-                                    </p>
-                                </div>
-                            </div>
+                            @if($mainPackage)
+                                <input type="hidden" name="package_id" value="{{ $mainPackage->id }}">
+                            @endif
+
                             <label class="field">
-                                <span>الباقة التي ستباع في المتجر</span>
-                                <select name="package_id" required>
-                                    @foreach($packages->where('active', true) as $package)
-                                        <option value="{{ $package->id }}">{{ $package->name }}</option>
-                                    @endforeach
-                                </select>
+                                <span>نوع البطاقة</span>
+                                <input value="{{ $mainPackage?->name ?? 'بطاقة 10 ساعات' }}" disabled>
                             </label>
+
                             <label class="field upload-drop">
-                                <span>ملف Excel أو CSV</span>
+                                <span>ملف البطاقات</span>
                                 <input name="file" type="file" accept=".xlsx,.xls,.csv" required>
                             </label>
-                            <div class="upload-drop text-xs font-bold leading-6 text-slate-600">
-                                مثال بطاقة واحدة داخل الملف:
-                                <div dir="ltr" class="mt-2 grid grid-cols-[90px_1fr] overflow-hidden rounded-lg border border-slate-200 bg-white font-mono text-slate-900">
-                                    <span class="border-b border-r border-slate-200 px-2 py-1">Username</span>
-                                    <span class="border-b border-slate-200 px-2 py-1">777742667150</span>
-                                    <span class="border-b border-r border-slate-200 px-2 py-1">Password</span>
-                                    <span class="border-b border-slate-200 px-2 py-1">734781</span>
-                                    <span class="border-r border-slate-200 px-2 py-1">Package</span>
-                                    <span class="px-2 py-1">10 3 2</span>
-                                </div>
-                                <p class="mt-2 text-slate-500">يمكن تكرار نفس الشكل أفقيًا: A/B ثم C/D ثم E/F.</p>
-                            </div>
-                            <button class="btn btn-primary w-full" type="submit">
-                                <i data-lucide="upload"></i>
-                                استيراد البطاقات
+
+                            <button class="btn btn-dark w-full" type="submit">
+                                <i data-lucide="upload-cloud"></i>
+                                استيراد الملف
                             </button>
-
-                            @if(session('import_errors'))
-                                <div class="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
-                                    @foreach(session('import_errors') as $error)
-                                        <div>{{ $error }}</div>
-                                    @endforeach
-                                </div>
-                            @endif
                         </form>
+                    </section>
 
-                        <form action="{{ route('dashboard.payment.update') }}" method="POST" class="glass-panel space-y-4 p-5">
-                            @csrf
-                            <input type="hidden" name="network_id" value="{{ $network->id }}">
-                            <div class="flex items-center gap-3">
-                                <span class="icon-chip"><i data-lucide="wallet-cards"></i></span>
-                                <h2 class="text-xl font-black text-slate-950">طرق الدفع</h2>
+                    <section class="edu-card edu-tests-card">
+                        <div class="edu-card-head">
+                            <div>
+                                <span>سجل العمليات</span>
+                                <h2>آخر الاستيرادات</h2>
+                                <p>ملخص سريع لكل ملف تم رفعه.</p>
                             </div>
-                            <label class="field">
-                                <span>رقم Jawwal Pay</span>
-                                <input name="wallet_number" value="{{ old('wallet_number', $network->wallet_number) }}">
-                            </label>
-                            <label class="field">
-                                <span>حساب Bank of Palestine</span>
-                                <input name="bank_account" value="{{ old('bank_account', $network->bank_account) }}">
-                            </label>
-                            <label class="field">
-                                <span>تفاصيل التحويل البنكي</span>
-                                <textarea name="bank_transfer_details" rows="3">{{ old('bank_transfer_details', $network->bank_transfer_details) }}</textarea>
-                            </label>
-                            <label class="field">
-                                <span>وصف المتجر</span>
-                                <textarea name="description" rows="4">{{ old('description', $network->description) }}</textarea>
-                            </label>
-                            <button class="btn btn-primary w-full" type="submit">تحديث</button>
-                        </form>
-                    </aside>
-                </section>
-            @endif
-        </div>
+                        </div>
+
+                        <div class="edu-log-list">
+                            @forelse($imports as $import)
+                                <div class="edu-log-item">
+                                    <span class="edu-log-icon"><i data-lucide="file-spreadsheet"></i></span>
+                                    <div>
+                                        <strong>{{ $import->file_name }}</strong>
+                                        <small>{{ $import->created_at->format('Y-m-d H:i') }}</small>
+                                    </div>
+                                    <span>{{ $import->imported_count }}</span>
+                                </div>
+                            @empty
+                                <p class="text-sm text-slate-500">لا يوجد استيراد بعد.</p>
+                            @endforelse
+                        </div>
+
+                        @if($latestImport)
+                            <div class="edu-import-summary">
+                                <span>آخر نتيجة</span>
+                                <strong>{{ $latestImport->imported_count }} بطاقة مستوردة</strong>
+                                <small>{{ $latestImport->duplicate_count }} مكرر / {{ $latestImport->failed_count }} فشل</small>
+                            </div>
+                        @endif
+                    </section>
+                </aside>
+            </section>
+        @endif
     </main>
 @endsection

@@ -9,6 +9,8 @@ use App\Services\CardImportService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -21,7 +23,6 @@ class InventoryController extends Controller
 
         $packages = collect();
         $cards = collect();
-
         if ($network) {
             $packages = $network->packages()
                 ->withCount([
@@ -154,15 +155,51 @@ class InventoryController extends Controller
 
         $data = $request->validate([
             'network_id' => ['required', Rule::in($networkIds)],
+            'name' => ['required', 'string', 'max:120'],
+            'owner_name' => ['required', 'string', 'max:120'],
+            'logo' => ['nullable', 'image', 'max:2048'],
+            'avatar' => ['nullable', 'image', 'max:2048'],
             'wallet_number' => ['nullable', 'string', 'max:120'],
             'bank_account' => ['nullable', 'string', 'max:120'],
             'bank_transfer_details' => ['nullable', 'string', 'max:1000'],
             'description' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        Network::findOrFail($data['network_id'])->update($data);
+        $network = Network::findOrFail($data['network_id']);
+        $user = auth()->user();
 
-        return back()->with('success', 'تم تحديث بيانات الدفع.');
+        $networkData = [
+            'name' => $data['name'],
+            'slug' => $this->uniqueNetworkSlug($data['name'], $network->id),
+            'wallet_number' => $data['wallet_number'] ?? null,
+            'bank_account' => $data['bank_account'] ?? null,
+            'bank_transfer_details' => $data['bank_transfer_details'] ?? null,
+            'description' => $data['description'] ?? null,
+        ];
+
+        if ($request->hasFile('logo')) {
+            if ($network->logo) {
+                Storage::disk('public')->delete($network->logo);
+            }
+
+            $networkData['logo'] = $request->file('logo')->store('network-logos', 'public');
+        }
+
+        $network->update($networkData);
+
+        $userData = ['name' => $data['owner_name']];
+
+        if ($request->hasFile('avatar')) {
+            if ($user->avatar) {
+                Storage::disk('public')->delete($user->avatar);
+            }
+
+            $userData['avatar'] = $request->file('avatar')->store('owner-avatars', 'public');
+        }
+
+        $user->update($userData);
+
+        return back()->with('success', 'تم تحديث بروفايل الشركة.');
     }
 
     private function selectedNetwork(Request $request, Collection $networks): ?Network
@@ -190,5 +227,19 @@ class InventoryController extends Controller
     private function authorizePackage(CardPackage $package): void
     {
         abort_unless($this->accessibleNetworks()->pluck('id')->contains($package->network_id), 403);
+    }
+
+    private function uniqueNetworkSlug(string $name, int $ignoreId): string
+    {
+        $base = Str::slug($name) ?: 'network';
+        $slug = $base;
+        $counter = 2;
+
+        while (Network::query()->where('slug', $slug)->whereKeyNot($ignoreId)->exists()) {
+            $slug = "{$base}-{$counter}";
+            $counter++;
+        }
+
+        return $slug;
     }
 }

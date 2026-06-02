@@ -8,25 +8,31 @@ import {
     Bell,
     Boxes,
     CheckCircle2,
+    CreditCard,
     ExternalLink,
     FileSpreadsheet,
     History,
     Image,
     KeyRound,
     LayoutDashboard,
+    LogIn,
     LogOut,
     Network,
+    PackageOpen,
     Plus,
     ReceiptText,
+    Rows3,
     Search,
     SearchCheck,
     ShoppingBag,
+    Ticket,
     TrendingUp,
     Upload,
     UploadCloud,
     UserRound,
     WalletCards,
     Wifi,
+    WifiOff,
     createIcons,
 } from 'lucide';
 
@@ -74,13 +80,13 @@ function setupCart() {
 
         if (selected.length === 0) {
             const empty = document.createElement('p');
-            empty.className = 'rounded-lg bg-slate-100 px-3 py-3 text-sm text-slate-500';
-            empty.textContent = 'لم يتم اختيار بطاقات بعد.';
+            empty.className = 'empty-cart';
+            empty.textContent = 'اختر عدد البطاقات من الباقات المتاحة.';
             summaryItems.append(empty);
         } else {
             selected.forEach((item) => {
                 const row = document.createElement('div');
-                row.className = 'flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2 text-sm';
+                row.className = 'summary-line summary-line-compact';
 
                 const name = document.createElement('span');
                 name.className = 'font-bold';
@@ -190,41 +196,45 @@ function setupIcons() {
             Bell,
             Boxes,
             CheckCircle2,
+            CreditCard,
             ExternalLink,
             FileSpreadsheet,
             History,
             Image,
             KeyRound,
             LayoutDashboard,
+            LogIn,
             LogOut,
             Network,
+            PackageOpen,
             Plus,
             ReceiptText,
+            Rows3,
             Search,
             SearchCheck,
             ShoppingBag,
+            Ticket,
             TrendingUp,
             Upload,
             UploadCloud,
             UserRound,
             WalletCards,
             Wifi,
+            WifiOff,
         },
     });
 }
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        setupCart();
-        setupOrderAccess();
-        setupCopyActions();
-        setupIcons();
-        Alpine.start();
-    });
-} else {
+function boot() {
     setupCart();
     setupOrderAccess();
     setupCopyActions();
     setupIcons();
     Alpine.start();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+} else {
+    boot();
 }

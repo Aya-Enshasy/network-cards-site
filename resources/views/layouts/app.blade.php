@@ -4,79 +4,99 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $title ?? 'Vinex Hotspot' }}</title>
+    <title>{{ $title ?? 'Net Zone' }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-screen antialiased">
     @php
-        $usesDashboardShell = auth()->check() && (request()->routeIs('dashboard') || request()->routeIs('dashboard.*') || request()->routeIs('admin.*'));
+        $usesOwnerShell = auth()->check() && (request()->routeIs('dashboard') || request()->routeIs('dashboard.*') || request()->routeIs('admin.*'));
+
+        $pageTitle = match (true) {
+            request()->routeIs('dashboard') => 'الرئيسية',
+            request()->routeIs('dashboard.orders.*') => 'الطلبات',
+            request()->routeIs('dashboard.inventory.*'), request()->routeIs('dashboard.packages.*'), request()->routeIs('dashboard.cards.*') => 'المخزون',
+            request()->routeIs('dashboard.reports.*') => 'التقارير',
+            request()->routeIs('admin.networks.*') => 'الشبكات',
+            default => $title ?? 'Net Zone',
+        };
+
+        $navItems = [
+            ['label' => 'الرئيسية', 'route' => 'dashboard', 'icon' => 'layout-dashboard', 'active' => request()->routeIs('dashboard')],
+            ['label' => 'الطلبات', 'route' => 'dashboard.orders.index', 'icon' => 'receipt-text', 'active' => request()->routeIs('dashboard.orders.*')],
+            ['label' => 'المخزون', 'route' => 'dashboard.inventory.index', 'icon' => 'package-open', 'active' => request()->routeIs('dashboard.inventory.*') || request()->routeIs('dashboard.packages.*') || request()->routeIs('dashboard.cards.*')],
+            ['label' => 'التقارير', 'route' => 'dashboard.reports.index', 'icon' => 'bar-chart-3', 'active' => request()->routeIs('dashboard.reports.*')],
+        ];
+
+        if ($usesOwnerShell && auth()->user()->isSuperAdmin()) {
+            $navItems[] = ['label' => 'الشبكات', 'route' => 'admin.networks.index', 'icon' => 'network', 'active' => request()->routeIs('admin.networks.*')];
+        }
+
+        $siteName = 'Net Zone';
+        $defaultLogo = asset('images/net-zone-logo.png');
+        $ownerName = auth()->check() ? auth()->user()->name : '';
+        $primaryNetwork = null;
+
+        if ($usesOwnerShell) {
+            $primaryNetwork = auth()->user()->isSuperAdmin()
+                ? \App\Models\Network::query()->orderBy('name')->first()
+                : auth()->user()->networks()->orderBy('name')->first();
+        }
+
+        $brandLogo = $primaryNetwork?->logo ? asset('storage/'.$primaryNetwork->logo) : $defaultLogo;
+        $ownerAvatar = auth()->check() && auth()->user()->avatar ? asset('storage/'.auth()->user()->avatar) : $brandLogo;
+        $profileUrl = route('dashboard.inventory.index').'#company-profile';
     @endphp
 
-    @if($usesDashboardShell)
-        @php
-            $pageTitle = match (true) {
-                request()->routeIs('dashboard') => 'لوحة التحكم',
-                request()->routeIs('dashboard.orders.*') => 'الطلبات',
-                request()->routeIs('dashboard.inventory.*'), request()->routeIs('dashboard.packages.*'), request()->routeIs('dashboard.cards.*') => 'المخزون',
-                request()->routeIs('dashboard.reports.*') => 'التقارير',
-                request()->routeIs('admin.networks.*') => 'الشبكات',
-                default => $title ?? 'Vinex Hotspot',
-            };
-
-            $navItems = [
-                ['label' => 'الرئيسية', 'route' => 'dashboard', 'icon' => 'layout-dashboard', 'active' => request()->routeIs('dashboard')],
-                ['label' => 'الطلبات', 'route' => 'dashboard.orders.index', 'icon' => 'receipt-text', 'active' => request()->routeIs('dashboard.orders.*')],
-                ['label' => 'المخزون', 'route' => 'dashboard.inventory.index', 'icon' => 'boxes', 'active' => request()->routeIs('dashboard.inventory.*') || request()->routeIs('dashboard.packages.*') || request()->routeIs('dashboard.cards.*')],
-                ['label' => 'التقارير', 'route' => 'dashboard.reports.index', 'icon' => 'bar-chart-3', 'active' => request()->routeIs('dashboard.reports.*')],
-            ];
-
-            if (auth()->user()->isSuperAdmin()) {
-                $navItems[] = ['label' => 'الشبكات', 'route' => 'admin.networks.index', 'icon' => 'network', 'active' => request()->routeIs('admin.networks.*')];
-            }
-        @endphp
-
-        <div class="app-canvas">
-            <aside class="app-sidebar">
-                <a class="brand-lockup" href="{{ route('dashboard') }}" aria-label="Vinex Hotspot">
-                    <span class="brand-mark">VX</span>
-                    <span>
-                        <strong>Vinex</strong>
-                        <small>Hotspot Cards</small>
-                    </span>
+    @if($usesOwnerShell)
+        <div class="owner-shell edu-shell">
+            <aside class="owner-sidebar edu-sidebar">
+                <a class="owner-brand edu-brand" href="{{ route('dashboard') }}" aria-label="لوحة صاحب المشروع">
+                    <span class="owner-brand-mark edu-logo"><img src="{{ $brandLogo }}" alt=""></span>
+                    <strong>{{ $siteName }}</strong>
                 </a>
 
-                <nav class="side-nav" aria-label="التنقل الرئيسي">
+                <nav class="owner-nav edu-nav" aria-label="تنقل لوحة صاحب المشروع">
                     @foreach($navItems as $item)
-                        <a class="side-link {{ $item['active'] ? 'side-link-active' : '' }}" href="{{ route($item['route']) }}">
+                        <a class="owner-nav-link edu-nav-link {{ $item['active'] ? 'owner-nav-link-active edu-nav-active' : '' }}" href="{{ route($item['route']) }}">
                             <i data-lucide="{{ $item['icon'] }}"></i>
                             <span>{{ $item['label'] }}</span>
                         </a>
                     @endforeach
                 </nav>
 
-                <div class="sidebar-profile">
-                    <span class="profile-avatar">{{ mb_substr(auth()->user()->name, 0, 1) }}</span>
-                    <div>
-                        <strong>{{ auth()->user()->name }}</strong>
-                        <small>صاحب الشبكة</small>
-                    </div>
+                <div class="edu-premium">
+                    <span class="edu-side-chip"><i data-lucide="sparkles"></i></span>
+                    <strong>{{ $primaryNetwork?->name ?? 'شبكتي' }}</strong>
+                    <p>إدارة البطاقات والطلبات.</p>
+                    <a href="{{ route('store.home') }}">
+                        <i data-lucide="store"></i>
+                        رابط المتجر
+                    </a>
                 </div>
             </aside>
 
-            <div class="app-workspace">
-                <header class="app-topbar">
-                    <div>
-                        <p>لوحة الشبكة</p>
+            <div class="owner-workspace edu-workspace">
+                <header class="owner-topbar edu-topbar">
+                    <div class="edu-page-name">
+                        <small>لوحة صاحب المشروع</small>
                         <h1>{{ $pageTitle }}</h1>
                     </div>
-                    <div class="topbar-actions">
-                        <a class="quick-action" href="{{ route('dashboard.inventory.index') }}">
-                            <i data-lucide="upload-cloud"></i>
-                            <span>رفع بطاقات</span>
+
+                    <div class="owner-topbar-actions edu-profile">
+                        <button class="edu-bell" type="button" aria-label="التنبيهات">
+                            <i data-lucide="bell"></i>
+                            <span>2</span>
+                        </button>
+                        <a class="edu-profile-link" href="{{ $profileUrl }}" aria-label="تعديل بروفايل الشركة">
+                            <span class="owner-avatar edu-avatar"><img src="{{ $ownerAvatar }}" alt=""></span>
+                            <div class="edu-user-copy">
+                                <strong>{{ $ownerName }}</strong>
+                                <small>تعديل البروفايل</small>
+                            </div>
                         </a>
                         <form action="{{ route('logout') }}" method="POST">
                             @csrf
-                            <button class="icon-button" type="submit" aria-label="خروج">
+                            <button class="edu-logout" type="submit" aria-label="تسجيل الخروج">
                                 <i data-lucide="log-out"></i>
                             </button>
                         </form>
@@ -102,7 +122,7 @@
                     </div>
                 @endif
 
-                <div class="app-content">
+                <div class="owner-content edu-content">
                     {{ $slot ?? '' }}
                     @yield('content')
                 </div>

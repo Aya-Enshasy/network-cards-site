@@ -1,6 +1,11 @@
 @extends('layouts.app', ['title' => 'لوحة التحكم'])
 
 @section('content')
+    @php
+        $paymentLabels = ['pending' => 'قيد المراجعة', 'paid' => 'مدفوع', 'rejected' => 'مرفوض'];
+        $orderLabels = ['pending' => 'بانتظار المراجعة', 'approved' => 'مقبول', 'completed' => 'مكتمل', 'rejected' => 'مرفوض'];
+    @endphp
+
     <main class="premium-shell min-h-screen px-4 py-7 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-7xl">
             <section class="mb-6 grid gap-4 lg:grid-cols-[1fr_360px] lg:items-stretch">
@@ -85,8 +90,8 @@
                                         <td>{{ $order->phone }}</td>
                                         <td>{{ $order->items->pluck('package.name')->filter()->join('، ') }}</td>
                                         <td>{{ number_format($order->total_amount, 2) }} NIS</td>
-                                        <td><span class="badge">{{ $order->payment_status }}</span></td>
-                                        <td><span class="badge">{{ $order->order_status }}</span></td>
+                                        <td><span class="badge">{{ $paymentLabels[$order->payment_status] ?? $order->payment_status }}</span></td>
+                                        <td><span class="badge">{{ $orderLabels[$order->order_status] ?? $order->order_status }}</span></td>
                                         <td><a class="table-action" href="{{ route('dashboard.orders.show', $order) }}">عرض</a></td>
                                     </tr>
                                 @empty
