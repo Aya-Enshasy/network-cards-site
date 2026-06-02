@@ -8,9 +8,8 @@
             ->map(function ($card) {
                 $code = $card->pivot->card_code ?: $card->card_code;
                 $password = $card->pivot->card_password ?: $card->card_password;
-                $packageLabel = $card->pivot->package_label ?: $card->package_label;
 
-                return trim(($packageLabel ? 'Package: '.$packageLabel.' | ' : '').'Username: '.$code.' | Password: '.$password);
+                return trim('Username: '.$code.' | Password: '.$password);
             })
             ->filter()
             ->values();
@@ -23,7 +22,7 @@
             <div class="glass-panel p-6">
                 <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div>
-                        <p class="text-sm font-black text-emerald-700">{{ $order->network->name }}</p>
+                        <p class="text-sm font-black text-violet-600">{{ $order->network->name }}</p>
                         <h1 class="mt-2 text-4xl font-black text-slate-950">طلب {{ $order->order_number }}</h1>
                         <p class="mt-2 text-sm text-slate-500">احتفظ بهذا الرابط لمتابعة الطلب واستلام البطاقات بعد الموافقة.</p>
                     </div>
@@ -32,22 +31,22 @@
             </div>
 
             <section class="grid gap-4 md:grid-cols-3">
-                <div class="stat-card">
+                <div class="stat-card stat-sun">
                     <span>حالة الدفع</span>
                     <strong>{{ $paymentLabels[$order->payment_status] ?? $order->payment_status }}</strong>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card stat-lilac">
                     <span>حالة الطلب</span>
                     <strong>{{ $orderLabels[$order->order_status] ?? $order->order_status }}</strong>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card stat-mint">
                     <span>الإجمالي</span>
                     <strong>{{ number_format($order->total_amount, 2) }} NIS</strong>
                 </div>
             </section>
 
             <section class="grid gap-6 lg:grid-cols-[1fr_360px]">
-                <div class="glass-panel p-6">
+                <div class="tool-panel">
                     <h2 class="text-xl font-black text-slate-950">تفاصيل الطلب</h2>
                     <div class="mt-4 divide-y divide-slate-200">
                         @foreach($order->items as $item)
@@ -62,7 +61,7 @@
                     </div>
                 </div>
 
-                <div class="glass-panel p-6">
+                <div class="tool-panel">
                     <h2 class="text-xl font-black text-slate-950">بيانات العميل</h2>
                     <dl class="mt-4 space-y-3 text-sm">
                         <div class="flex justify-between gap-4">
@@ -81,10 +80,10 @@
                 </div>
             </section>
 
-            <section class="glass-panel p-6">
+            <section class="tool-panel">
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <p class="text-sm font-black text-emerald-700">البطاقات المسلمة</p>
+                        <p class="text-sm font-black text-violet-600">البطاقات المسلمة</p>
                         <h2 class="text-2xl font-black text-slate-950">بطاقاتك</h2>
                     </div>
                     @if($deliveredCodes->isNotEmpty())
@@ -97,15 +96,8 @@
                         @foreach($order->deliveredCards as $card)
                             @php($code = $card->pivot->card_code ?: $card->card_code)
                             @php($password = $card->pivot->card_password ?: $card->card_password)
-                            @php($packageLabel = $card->pivot->package_label ?: $card->package_label)
-                            @php($copyText = trim(($packageLabel ? 'Package: '.$packageLabel.' | ' : '').'Username: '.$code.' | Password: '.$password))
+                            @php($copyText = trim('Username: '.$code.' | Password: '.$password))
                             <div class="code-box premium-code" data-copy-line="{{ $copyText }}">
-                                <span>{{ $card->package->name }}</span>
-                                @if($packageLabel)
-                                    <p class="rounded-lg bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-800">
-                                        نص الباقة في الملف: <span dir="ltr">{{ $packageLabel }}</span>
-                                    </p>
-                                @endif
                                 <div class="delivered-card-fields">
                                     <div>
                                         <small>Username / رقم البطاقة</small>

@@ -1,6 +1,34 @@
 import './bootstrap';
 import Alpine from 'alpinejs';
-import { createIcons, icons } from 'lucide';
+import {
+    ArrowRight,
+    Award,
+    BadgeCheck,
+    BarChart3,
+    Bell,
+    Boxes,
+    CheckCircle2,
+    ExternalLink,
+    FileSpreadsheet,
+    History,
+    Image,
+    KeyRound,
+    LayoutDashboard,
+    LogOut,
+    Network,
+    Plus,
+    ReceiptText,
+    Search,
+    SearchCheck,
+    ShoppingBag,
+    TrendingUp,
+    Upload,
+    UploadCloud,
+    UserRound,
+    WalletCards,
+    Wifi,
+    createIcons,
+} from 'lucide';
 
 window.Alpine = Alpine;
 
@@ -153,7 +181,36 @@ function setupCopyActions() {
 }
 
 function setupIcons() {
-    createIcons({ icons });
+    createIcons({
+        icons: {
+            ArrowRight,
+            Award,
+            BadgeCheck,
+            BarChart3,
+            Bell,
+            Boxes,
+            CheckCircle2,
+            ExternalLink,
+            FileSpreadsheet,
+            History,
+            Image,
+            KeyRound,
+            LayoutDashboard,
+            LogOut,
+            Network,
+            Plus,
+            ReceiptText,
+            Search,
+            SearchCheck,
+            ShoppingBag,
+            TrendingUp,
+            Upload,
+            UploadCloud,
+            UserRound,
+            WalletCards,
+            Wifi,
+        },
+    });
 }
 
 if (document.readyState === 'loading') {

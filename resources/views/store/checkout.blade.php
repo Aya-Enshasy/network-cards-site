@@ -4,13 +4,16 @@
     <main class="premium-shell min-h-screen px-4 py-6 sm:px-6 lg:px-8">
         <section class="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1fr_390px]">
             <div class="space-y-6">
-                <a class="btn btn-glass" href="{{ route('store.network', $network->slug) }}">رجوع للمتجر</a>
+                <a class="btn btn-glass" href="{{ route('store.network', $network->slug) }}">
+                    <i data-lucide="arrow-right"></i>
+                    رجوع للمتجر
+                </a>
 
                 <div class="glass-panel p-6">
-                    <p class="text-sm font-black text-emerald-700">{{ $network->name }}</p>
+                    <p class="text-sm font-black text-violet-600">{{ $network->name }}</p>
                     <h1 class="mt-2 text-4xl font-black text-slate-950">إتمام الطلب والدفع</h1>
                     <p class="mt-3 max-w-2xl leading-7 text-slate-600">
-                        لن يتم حجز أو بيع أي بطاقة الآن. سيتم تسليم رقم البطاقة وكلمة السر فقط بعد مراجعة الوصل والموافقة.
+                        لن يتم حجز أو بيع أي بطاقة الآن. سيتم تسليم Username وكلمة السر فقط بعد مراجعة الوصل والموافقة.
                     </p>
                 </div>
 
@@ -34,9 +37,12 @@
 
                 <form action="{{ route('orders.store', $network->slug) }}" method="POST" enctype="multipart/form-data" class="glass-panel space-y-4 p-6">
                     @csrf
-                    <div>
-                        <h2 class="text-xl font-black text-slate-950">معلومات العميل</h2>
-                        <p class="mt-1 text-sm text-slate-500">لا تحتاج إلى حساب. سيتم حفظ رابط الطلب الآمن على جهازك.</p>
+                    <div class="flex items-center gap-3">
+                        <span class="icon-chip"><i data-lucide="user-round"></i></span>
+                        <div>
+                            <h2 class="text-xl font-black text-slate-950">معلومات العميل</h2>
+                            <p class="mt-1 text-sm text-slate-500">لا تحتاج إلى حساب. سيتم حفظ رابط الطلب الآمن على جهازك.</p>
+                        </div>
                     </div>
                     <div class="grid gap-4 md:grid-cols-2">
                         <label class="field">
@@ -52,7 +58,7 @@
                         <span>ملاحظات اختيارية</span>
                         <textarea name="notes" rows="3">{{ old('notes') }}</textarea>
                     </label>
-                    <label class="field">
+                    <label class="field upload-drop">
                         <span>صورة وصل الدفع</span>
                         <input name="receipt" type="file" accept="image/*" required>
                     </label>

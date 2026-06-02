@@ -5,41 +5,51 @@
         <div class="mx-auto max-w-6xl">
             <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                    <p class="text-sm font-bold text-emerald-700">{{ $order->network->name }}</p>
-                    <h1 class="text-3xl font-black text-slate-950">طلب {{ $order->order_number }}</h1>
+                    <p class="text-sm font-black text-violet-600">{{ $order->network->name }}</p>
+                    <h1 class="text-4xl font-black text-slate-950">طلب {{ $order->order_number }}</h1>
                 </div>
-                <a class="btn btn-muted" href="{{ route('dashboard.orders.index') }}">رجوع للطلبات</a>
+                <a class="btn btn-muted" href="{{ route('dashboard.orders.index') }}">
+                    <i data-lucide="arrow-right"></i>
+                    رجوع للطلبات
+                </a>
             </div>
 
-            <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <div class="stat-card">
+            <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <div class="stat-card stat-mint">
                     <span>العميل</span>
                     <strong>{{ $order->customer_name }}</strong>
+                    <small>{{ $order->created_at->format('Y-m-d H:i') }}</small>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card stat-lilac">
                     <span>الجوال</span>
                     <strong>{{ $order->phone }}</strong>
+                    <small>رقم التواصل</small>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card stat-sun">
                     <span>الدفع</span>
                     <strong>{{ $order->payment_status }}</strong>
+                    <small>حالة وصل الدفع</small>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card stat-rose">
                     <span>الإجمالي</span>
                     <strong>{{ number_format($order->total_amount, 2) }}</strong>
+                    <small>NIS</small>
                 </div>
             </section>
 
-            <section class="mt-6 grid gap-6 lg:grid-cols-[1fr_360px]">
+            <section class="mt-6 grid gap-6 xl:grid-cols-[1fr_380px]">
                 <div class="space-y-6">
-                    <div class="tool-panel p-5">
-                        <h2 class="text-xl font-black text-slate-950">البطاقات المطلوبة</h2>
+                    <div class="tool-panel">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-xl font-black text-slate-950">البطاقات المطلوبة</h2>
+                            <span class="icon-chip"><i data-lucide="shopping-bag"></i></span>
+                        </div>
                         <div class="mt-4 divide-y divide-slate-100">
                             @foreach($order->items as $item)
                                 <div class="flex items-center justify-between gap-4 py-3">
                                     <div>
                                         <strong class="block text-slate-950">{{ $item->package->name }}</strong>
-                                        <span class="text-sm text-slate-500">{{ $item->quantity }} × {{ number_format($item->price, 2) }}</span>
+                                        <span class="text-sm text-slate-500">{{ $item->quantity }} × {{ number_format($item->price, 2) }} NIS</span>
                                     </div>
                                     <strong class="text-slate-950">{{ number_format($item->subtotal, 2) }}</strong>
                                 </div>
@@ -47,21 +57,17 @@
                         </div>
                     </div>
 
-                    <div class="tool-panel p-5">
-                        <h2 class="text-xl font-black text-slate-950">البطاقات المسلمة</h2>
+                    <div class="tool-panel">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-xl font-black text-slate-950">البطاقات المسلمة</h2>
+                            <span class="icon-chip"><i data-lucide="key-round"></i></span>
+                        </div>
                         @if($order->deliveredCards->isNotEmpty())
                             <div class="mt-4 grid gap-3 sm:grid-cols-2">
                                 @foreach($order->deliveredCards as $card)
                                     @php($code = $card->pivot->card_code ?: $card->card_code)
                                     @php($password = $card->pivot->card_password ?: $card->card_password)
-                                    @php($packageLabel = $card->pivot->package_label ?: $card->package_label)
                                     <div class="code-box">
-                                        <span>{{ $card->package->name }}</span>
-                                        @if($packageLabel)
-                                            <p class="rounded-lg bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-800">
-                                                Package: <span dir="ltr">{{ $packageLabel }}</span>
-                                            </p>
-                                        @endif
                                         <div class="delivered-card-fields">
                                             <div>
                                                 <small>Username / رقم البطاقة</small>
@@ -82,8 +88,11 @@
                 </div>
 
                 <aside class="space-y-6">
-                    <div class="tool-panel p-5">
-                        <h2 class="text-xl font-black text-slate-950">وصل الدفع</h2>
+                    <div class="tool-panel">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-xl font-black text-slate-950">وصل الدفع</h2>
+                            <span class="icon-chip"><i data-lucide="image"></i></span>
+                        </div>
                         @if($order->receipt?->image)
                             <a href="{{ asset('storage/'.$order->receipt->image) }}" target="_blank">
                                 <img class="mt-4 aspect-[4/5] w-full rounded-lg object-cover ring-1 ring-slate-200" src="{{ asset('storage/'.$order->receipt->image) }}" alt="وصل الدفع">
@@ -97,12 +106,18 @@
                         @endif
                     </div>
 
-                    <div class="tool-panel p-5">
-                        <h2 class="text-xl font-black text-slate-950">إجراءات</h2>
+                    <div class="tool-panel">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-xl font-black text-slate-950">إجراءات</h2>
+                            <span class="icon-chip"><i data-lucide="check-circle-2"></i></span>
+                        </div>
                         <div class="mt-4 grid gap-3">
                             <form action="{{ route('dashboard.orders.approve', $order) }}" method="POST">
                                 @csrf
-                                <button class="btn btn-primary w-full" type="submit">موافقة وتسليم البطاقات</button>
+                                <button class="btn btn-primary w-full" type="submit">
+                                    <i data-lucide="badge-check"></i>
+                                    موافقة وتسليم البطاقات
+                                </button>
                             </form>
                             <form action="{{ route('dashboard.orders.reject', $order) }}" method="POST">
                                 @csrf

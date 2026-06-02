@@ -17,8 +17,16 @@ class HotspotCard extends Model
         'card_code',
         'card_password',
         'package_label',
+        'imported_at',
         'status',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'imported_at' => 'datetime',
+        ];
+    }
 
     public function network(): BelongsTo
     {

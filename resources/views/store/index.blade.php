@@ -5,8 +5,8 @@
         @if(! $network)
             <section class="mx-auto grid min-h-[75vh] max-w-3xl place-items-center px-4 text-center">
                 <div class="glass-panel p-8">
-                    <div class="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-lg bg-[#087a5c] text-lg font-black text-white shadow-xl">VX</div>
-                    <h1 class="text-3xl font-black text-slate-950">لا توجد شبكات متاحة حاليا</h1>
+                    <div class="brand-mark mx-auto mb-5">VX</div>
+                    <h1 class="text-3xl font-black text-slate-950">لا توجد شبكات متاحة حاليًا</h1>
                     <p class="mt-3 text-slate-600">أضف شبكة من لوحة الإدارة لبدء بيع بطاقات الهوتسبوت.</p>
                     <a class="btn btn-primary mt-6" href="{{ route('login') }}">دخول الإدارة</a>
                 </div>
@@ -16,7 +16,7 @@
                 <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
                     <nav class="glass-nav flex flex-col gap-4 p-3 sm:flex-row sm:items-center sm:justify-between">
                         <a href="{{ route('store.network', $network->slug) }}" class="flex items-center gap-3">
-                            <span class="grid h-12 w-12 place-items-center rounded-lg bg-[#087a5c] text-xl font-black text-white">
+                            <span class="grid h-12 w-12 place-items-center rounded-lg bg-[#171b25] text-xl font-black text-white">
                                 {{ mb_substr($network->name, 0, 1) }}
                             </span>
                             <span>
@@ -26,31 +26,37 @@
                         </a>
 
                         <div class="flex flex-col gap-2 sm:flex-row">
-                            <a data-last-order-link class="btn btn-glass hidden" href="#">الرجوع إلى آخر عملية شراء</a>
-                            <a class="btn btn-glass" href="{{ route('orders.recover') }}">استرجاع طلباتي</a>
+                            <a data-last-order-link class="btn btn-glass hidden" href="#">آخر عملية شراء</a>
+                            <a class="btn btn-glass" href="{{ route('orders.recover') }}">
+                                <i data-lucide="search"></i>
+                                استرجاع طلباتي
+                            </a>
                             <a class="btn btn-dark" href="{{ route('login') }}">لوحة التحكم</a>
                         </div>
                     </nav>
 
                     <div class="grid gap-8 py-10 lg:grid-cols-[1.05fr_.95fr] lg:items-center">
                         <div>
-                            <div class="inline-flex rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
-                                بيع سريع بدون حسابات
+                            <div class="inline-flex rounded-full border border-violet-100 bg-white px-3 py-1 text-xs font-black text-violet-700 shadow-sm">
+                                شراء سريع بدون إنشاء حساب
                             </div>
                             <h1 class="mt-5 max-w-3xl text-4xl font-black leading-tight text-slate-950 sm:text-6xl">
-                                بطاقات إنترنت جاهزة بعد موافقة الدفع.
+                                اختر بطاقتك وارفع وصل الدفع، والباقي علينا.
                             </h1>
                             <p class="mt-5 max-w-2xl text-base leading-8 text-slate-600">
-                                اختر الكمية، ارفع وصل الدفع، وبعد الموافقة يظهر لك رقم البطاقة وكلمة السر من رابط آمن.
+                                بعد موافقة صاحب الشبكة تظهر لك بيانات البطاقة من رابط آمن: Username وكلمة السر.
                             </p>
                         </div>
 
                         <div class="glass-panel p-5">
                             <form action="{{ route('orders.recover.submit') }}" method="POST" class="grid gap-3">
                                 @csrf
-                                <div>
-                                    <p class="text-sm font-black text-slate-950">بحث سريع عن طلب</p>
-                                    <p class="text-xs text-slate-500">استخدم رقم الطلب أو رقم الجوال.</p>
+                                <div class="flex items-center gap-3">
+                                    <span class="icon-chip"><i data-lucide="search-check"></i></span>
+                                    <div>
+                                        <p class="text-sm font-black text-slate-950">بحث سريع عن طلب</p>
+                                        <p class="text-xs text-slate-500">استخدم رقم الطلب أو رقم الجوال.</p>
+                                    </div>
                                 </div>
                                 <div class="grid gap-2 sm:grid-cols-2">
                                     <input name="order_number" placeholder="ORD-2026-000001">
@@ -71,7 +77,7 @@
                     <div>
                         <div class="mb-5 flex items-end justify-between gap-4">
                             <div>
-                                <p class="text-sm font-black text-emerald-700">الباقات المتاحة</p>
+                                <p class="text-sm font-black text-violet-600">الباقات المتاحة</p>
                                 <h2 class="text-3xl font-black text-slate-950">اختر باقتك</h2>
                             </div>
                             <span class="hidden rounded-full bg-white px-3 py-1 text-xs font-black text-slate-500 shadow-sm sm:inline-flex">
@@ -121,10 +127,10 @@
                     <aside class="order-summary premium-summary" data-order-summary>
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-xs font-black text-emerald-700">السلة</p>
+                                <p class="text-xs font-black text-violet-600">السلة</p>
                                 <h2 class="text-xl font-black text-slate-950">ملخص الطلب</h2>
                             </div>
-                            <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-800" data-summary-count>0 بطاقة</span>
+                            <span class="rounded-full bg-violet-100 px-3 py-1 text-xs font-black text-violet-800" data-summary-count>0 بطاقة</span>
                         </div>
                         <div class="mt-4 min-h-28 space-y-2" data-summary-items>
                             <p class="rounded-lg bg-slate-100 px-3 py-3 text-sm text-slate-500">لم يتم اختيار بطاقات بعد.</p>

@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Imports\CardCodesImport;
 use App\Models\CardImport;
 use App\Models\CardPackage;
 use App\Models\HotspotCard;
@@ -12,7 +11,8 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use Throwable;
 
 class CardImportService
@@ -42,12 +42,17 @@ class CardImportService
         $failed = 0;
         $errors = [];
 
-        DB::transaction(function () use ($rows, $network, $package, &$seenInFile, &$imported, &$duplicates, &$failed, &$errors): void {
+        $networkPackages = $network->packages()
+            ->where('active', true)
+            ->get();
+
+        DB::transaction(function () use ($rows, $network, $package, $networkPackages, &$seenInFile, &$imported, &$duplicates, &$failed, &$errors): void {
             foreach ($rows as $index => $row) {
                 $displayLine = (int) ($row['line'] ?? ($index + 1));
                 $cardCode = $this->cleanCell($row['code'] ?? null);
                 $cardPassword = $this->cleanCell($row['password'] ?? null);
                 $packageLabel = $this->cleanCell($row['package_label'] ?? null);
+                $resolvedPackage = $this->resolvePackage($packageLabel, $networkPackages, $package);
 
                 if ($cardCode === '' || $cardPassword === '') {
                     $failed++;
@@ -71,9 +76,10 @@ class CardImportService
                         'card_code' => $cardCode,
                     ],
                     [
-                        'package_id' => $package->id,
+                        'package_id' => $resolvedPackage->id,
                         'card_password' => $cardPassword,
                         'package_label' => $packageLabel !== '' ? $packageLabel : null,
+                        'imported_at' => now(),
                         'status' => 'available',
                     ],
                 );
@@ -109,13 +115,13 @@ class CardImportService
     }
 
     /**
-     * @return array<int, array<int, mixed>>
+     * @return array<int, array{sheet:string, rows:array<int, array<int, mixed>>}>
      */
     private function readRows(UploadedFile $file): array
     {
         try {
-            $import = new CardCodesImport();
-            Excel::import($import, $file);
+            $path = $file->getRealPath() ?: $file->getPathname();
+            $spreadsheet = IOFactory::load($path);
         } catch (Throwable $exception) {
             report($exception);
 
@@ -124,31 +130,62 @@ class CardImportService
             ]);
         }
 
-        return $import->rows
-            ->map(fn ($row) => $row instanceof Collection ? $row->values()->all() : collect($row)->values()->all())
-            ->values()
-            ->all();
+        $worksheets = [];
+
+        foreach ($spreadsheet->getWorksheetIterator() as $sheet) {
+            $highestRow = $sheet->getHighestDataRow();
+            $highestColumn = Coordinate::columnIndexFromString($sheet->getHighestDataColumn());
+            $rows = [];
+
+            for ($row = 1; $row <= $highestRow; $row++) {
+                $values = [];
+
+                for ($column = 1; $column <= $highestColumn; $column++) {
+                    $values[] = $sheet->getCellByColumnAndRow($column, $row)->getFormattedValue();
+                }
+
+                $rows[] = $values;
+            }
+
+            $worksheets[] = [
+                'sheet' => $sheet->getTitle(),
+                'rows' => $rows,
+            ];
+        }
+
+        return $worksheets;
     }
 
     /**
-     * @param  array<int, array<int, mixed>>  $rawRows
+     * @param  array<int, array{sheet:string, rows:array<int, array<int, mixed>>}>  $worksheets
      * @return array<int, array{line:int, column?:int, code:string, password:string, package_label:string}>
      */
-    private function parseCardRows(array $rawRows): array
+    private function parseCardRows(array $worksheets): array
     {
-        $packedCellCards = $this->parsePackedCellLayout($rawRows);
+        $cards = [];
 
-        if ($packedCellCards !== []) {
-            return $packedCellCards;
+        foreach ($worksheets as $worksheet) {
+            $rawRows = $worksheet['rows'] ?? [];
+            $packedCellCards = $this->parsePackedCellLayout($rawRows);
+
+            if ($packedCellCards !== []) {
+                array_push($cards, ...$packedCellCards);
+
+                continue;
+            }
+
+            $blockCards = $this->parseBlockLayout($rawRows);
+
+            if ($blockCards !== []) {
+                array_push($cards, ...$blockCards);
+
+                continue;
+            }
+
+            array_push($cards, ...$this->parseSimpleRows($rawRows));
         }
 
-        $blockCards = $this->parseBlockLayout($rawRows);
-
-        if ($blockCards !== []) {
-            return $blockCards;
-        }
-
-        return $this->parseSimpleRows($rawRows);
+        return $cards;
     }
 
     /**
@@ -290,6 +327,83 @@ class CardImportService
         $text = trim((string) $value);
 
         return preg_replace('/\s+/u', ' ', $text) ?: '';
+    }
+
+    private function resolvePackage(string $packageLabel, Collection $packages, CardPackage $fallback): CardPackage
+    {
+        if ($packageLabel === '') {
+            return $fallback;
+        }
+
+        $numbers = $this->extractNumbers($packageLabel);
+
+        if (count($numbers) >= 2) {
+            $duration = (int) $numbers[0];
+            $price = (float) $numbers[array_key_last($numbers)];
+            $matched = $packages->first(
+                fn (CardPackage $candidate): bool => (int) $candidate->duration_hours === $duration
+                    && abs(((float) $candidate->price) - $price) < 0.01
+            );
+
+            if ($matched instanceof CardPackage) {
+                return $matched;
+            }
+        }
+
+        $normalizedLabel = $this->normalizePackageText($packageLabel);
+        $matched = $packages->first(function (CardPackage $candidate) use ($normalizedLabel): bool {
+            $name = $this->normalizePackageText($candidate->name);
+            $description = $this->normalizePackageText($candidate->description ?? '');
+
+            return ($name !== '' && str_contains($normalizedLabel, $name))
+                || ($description !== '' && str_contains($normalizedLabel, $description));
+        });
+
+        return $matched instanceof CardPackage ? $matched : $fallback;
+    }
+
+    /**
+     * @return array<int, float>
+     */
+    private function extractNumbers(string $value): array
+    {
+        $value = strtr($value, [
+            '٠' => '0',
+            '١' => '1',
+            '٢' => '2',
+            '٣' => '3',
+            '٤' => '4',
+            '٥' => '5',
+            '٦' => '6',
+            '٧' => '7',
+            '٨' => '8',
+            '٩' => '9',
+            '۰' => '0',
+            '۱' => '1',
+            '۲' => '2',
+            '۳' => '3',
+            '۴' => '4',
+            '۵' => '5',
+            '۶' => '6',
+            '۷' => '7',
+            '۸' => '8',
+            '۹' => '9',
+        ]);
+
+        preg_match_all('/\d+(?:[\.,]\d+)?/u', $value, $matches);
+
+        return collect($matches[0] ?? [])
+            ->map(fn (string $number): float => (float) str_replace(',', '.', $number))
+            ->values()
+            ->all();
+    }
+
+    private function normalizePackageText(string $value): string
+    {
+        return Str::of($value)
+            ->lower()
+            ->replace([' ', '-', '_', ':', '/', '\\', '.', '،', ','], '')
+            ->toString();
     }
 
     private function extractLabeledValue(string $line, string $label): ?string

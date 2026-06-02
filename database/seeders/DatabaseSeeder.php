@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\CardPackage;
-use App\Models\HotspotCard;
 use App\Models\Network;
 use App\Models\Order;
 use App\Models\User;
@@ -61,8 +60,6 @@ class DatabaseSeeder extends Seeder
                 'price' => 2,
                 'speed' => 'تحميل مفتوح',
                 'description' => 'مناسبة للاستخدام السريع والدراسة.',
-                'prefix' => 'GPT2',
-                'stock' => 140,
             ],
             [
                 'name' => 'بطاقة 1 شيكل',
@@ -70,11 +67,9 @@ class DatabaseSeeder extends Seeder
                 'price' => 1,
                 'speed' => 'تصفح مرن',
                 'description' => 'خيار اقتصادي وسريع للاستخدام الخفيف.',
-                'prefix' => 'GPT1',
-                'stock' => 110,
             ],
         ])->map(function (array $data) use ($network) {
-            $package = CardPackage::updateOrCreate(
+            return CardPackage::updateOrCreate(
                 [
                     'network_id' => $network->id,
                     'name' => $data['name'],
@@ -87,22 +82,6 @@ class DatabaseSeeder extends Seeder
                     'active' => true,
                 ],
             );
-
-            for ($index = 1; $index <= $data['stock']; $index++) {
-                HotspotCard::updateOrCreate(
-                    [
-                        'network_id' => $network->id,
-                        'card_code' => sprintf('%s-%04d', $data['prefix'], $index),
-                    ],
-                    [
-                        'package_id' => $package->id,
-                        'card_password' => sprintf('%s-PASS-%04d', $data['prefix'], $index),
-                        'status' => 'available',
-                    ],
-                );
-            }
-
-            return $package;
         });
 
         $network->packages()

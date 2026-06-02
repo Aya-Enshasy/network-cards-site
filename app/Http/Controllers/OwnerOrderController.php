@@ -55,6 +55,9 @@ class OwnerOrderController extends Controller
                         ->where('network_id', $order->network_id)
                         ->where('package_id', $item->package_id)
                         ->where('status', 'available')
+                        ->orderByRaw('CASE WHEN imported_at IS NULL THEN 1 ELSE 0 END')
+                        ->orderBy('imported_at')
+                        ->orderBy('id')
                         ->lockForUpdate()
                         ->limit($item->quantity)
                         ->get();

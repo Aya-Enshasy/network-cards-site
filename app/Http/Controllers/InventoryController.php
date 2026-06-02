@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CardPackage;
+use App\Models\HotspotCard;
 use App\Models\Network;
 use App\Services\CardImportService;
 use Illuminate\Http\RedirectResponse;
@@ -19,6 +20,7 @@ class InventoryController extends Controller
         $network = $this->selectedNetwork($request, $networks);
 
         $packages = collect();
+        $cards = collect();
 
         if ($network) {
             $packages = $network->packages()
@@ -30,6 +32,19 @@ class InventoryController extends Controller
                 ->orderBy('price')
                 ->get();
 
+            $cards = HotspotCard::query()
+                ->where('hotspot_cards.network_id', $network->id)
+                ->with('package')
+                ->leftJoin('order_cards', 'order_cards.hotspot_card_id', '=', 'hotspot_cards.id')
+                ->leftJoin('orders', 'orders.id', '=', 'order_cards.order_id')
+                ->select('hotspot_cards.*', 'orders.order_number as used_order_number', 'orders.customer_name as used_customer_name')
+                ->orderByRaw("CASE WHEN hotspot_cards.status = 'sold' THEN 0 ELSE 1 END")
+                ->orderByRaw('CASE WHEN hotspot_cards.imported_at IS NULL THEN 1 ELSE 0 END')
+                ->orderByDesc('hotspot_cards.imported_at')
+                ->orderByDesc('hotspot_cards.id')
+                ->limit(1000)
+                ->get();
+
             $imports = $network->cardImports()
                 ->with(['package', 'uploader'])
                 ->latest()
@@ -39,7 +54,7 @@ class InventoryController extends Controller
             $imports = collect();
         }
 
-        return view('dashboard.inventory', compact('networks', 'network', 'packages', 'imports'));
+        return view('dashboard.inventory', compact('networks', 'network', 'packages', 'imports', 'cards'));
     }
 
     public function storePackage(Request $request): RedirectResponse

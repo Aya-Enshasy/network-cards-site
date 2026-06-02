@@ -8,7 +8,11 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-screen antialiased">
-    @auth
+    @php
+        $usesDashboardShell = auth()->check() && (request()->routeIs('dashboard') || request()->routeIs('dashboard.*') || request()->routeIs('admin.*'));
+    @endphp
+
+    @if($usesDashboardShell)
         @php
             $pageTitle = match (true) {
                 request()->routeIs('dashboard') => 'لوحة التحكم',
@@ -126,6 +130,6 @@
 
         {{ $slot ?? '' }}
         @yield('content')
-    @endauth
+    @endif
 </body>
 </html>
