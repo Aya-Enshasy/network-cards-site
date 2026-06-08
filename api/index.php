@@ -197,4 +197,44 @@ require __DIR__.'/../vendor/autoload.php';
 /** @var Application $app */
 $app = require_once __DIR__.'/../bootstrap/app.php';
 
+if (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) === '/__vercel-migrate') {
+    $expectedToken = vercel_env_value('VERCEL_MIGRATE_TOKEN');
+    $providedToken = (string) ($_GET['token'] ?? '');
+
+    if (! is_string($expectedToken) || $expectedToken === '' || ! hash_equals($expectedToken, $providedToken)) {
+        http_response_code(403);
+        header('Content-Type: application/json');
+        echo json_encode([
+            'status' => 'forbidden',
+            'message' => 'Set VERCEL_MIGRATE_TOKEN in Vercel and pass it as ?token=...',
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        exit;
+    }
+
+    header('Content-Type: application/json');
+
+    try {
+        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        $migrationOutput = \Illuminate\Support\Facades\Artisan::output();
+
+        \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]);
+        $seedOutput = \Illuminate\Support\Facades\Artisan::output();
+
+        echo json_encode([
+            'status' => 'ok',
+            'migrate' => trim($migrationOutput),
+            'seed' => trim($seedOutput),
+            'health' => vercel_database_status(),
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    } catch (Throwable $exception) {
+        http_response_code(500);
+        echo json_encode([
+            'status' => 'failed',
+            'error' => $exception->getMessage(),
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    }
+
+    exit;
+}
+
 $app->handleRequest(\Illuminate\Http\Request::capture());
