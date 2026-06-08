@@ -238,6 +238,25 @@ function vercel_prepare_app_key_environment(): void
     vercel_set_runtime_env('APP_KEY', $key);
 }
 
+function vercel_prepare_url_environment(): void
+{
+    $host = $_SERVER['HTTP_HOST'] ?? vercel_env_value('VERCEL_URL');
+
+    if (! is_string($host) || $host === '') {
+        return;
+    }
+
+    $url = 'https://'.preg_replace('/^https?:\/\//i', '', $host);
+
+    vercel_set_runtime_env('APP_URL', $url);
+    vercel_set_runtime_env('ASSET_URL', $url);
+}
+
+function vercel_diagnostics_enabled(): bool
+{
+    return vercel_env_value('VERCEL_MIGRATE_ENABLED') === 'true';
+}
+
 if (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) === '/__vercel-health') {
     $key = vercel_key_status();
     $database = vercel_database_status();
@@ -270,6 +289,7 @@ foreach (['/tmp/cache/config.php', '/tmp/cache/services.php', '/tmp/cache/packag
 
 vercel_prepare_database_environment();
 vercel_prepare_app_key_environment();
+vercel_prepare_url_environment();
 
 if (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) === '/__vercel-debug-home') {
     vercel_set_runtime_env('APP_DEBUG', 'true');
@@ -287,6 +307,11 @@ require __DIR__.'/../vendor/autoload.php';
 $app = require_once __DIR__.'/../bootstrap/app.php';
 
 if (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) === '/__vercel-migrate') {
+    if (! vercel_diagnostics_enabled()) {
+        http_response_code(404);
+        exit;
+    }
+
     $expectedToken = vercel_env_value('VERCEL_MIGRATE_TOKEN');
     $providedToken = (string) ($_GET['token'] ?? '');
 
@@ -353,6 +378,11 @@ if (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) === '/__vercel-migra
 }
 
 if (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) === '/__vercel-debug-home') {
+    if (! vercel_diagnostics_enabled()) {
+        http_response_code(404);
+        exit;
+    }
+
     $expectedToken = vercel_env_value('VERCEL_MIGRATE_TOKEN');
     $providedToken = (string) ($_GET['token'] ?? '');
 
