@@ -243,6 +243,10 @@ foreach (['/tmp/cache/config.php', '/tmp/cache/services.php', '/tmp/cache/packag
 
 vercel_prepare_database_environment();
 
+if (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) === '/__vercel-debug-home') {
+    vercel_set_runtime_env('APP_DEBUG', 'true');
+}
+
 define('LARAVEL_START', microtime(true));
 
 if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php')) {
@@ -334,8 +338,6 @@ if (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) === '/__vercel-debug
     header('Content-Type: application/json');
 
     try {
-        $app['config']->set('app.debug', true);
-
         $request = \Illuminate\Http\Request::create('/', 'GET');
         $response = $app->handle($request, \Symfony\Component\HttpKernel\HttpKernelInterface::MAIN_REQUEST, false);
         $content = (string) $response->getContent();
