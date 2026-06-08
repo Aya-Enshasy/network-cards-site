@@ -166,6 +166,27 @@ function vercel_database_status(): array
     }
 }
 
+function vercel_reset_postgres_schema(): ?string
+{
+    $config = vercel_database_config();
+
+    if (($config['driver'] ?? null) !== 'pgsql') {
+        return null;
+    }
+
+    $pdo = new PDO($config['dsn'], $config['username'], $config['password']);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo->exec('drop schema if exists public cascade');
+    $pdo->exec('create schema public');
+
+    $user = (string) $pdo->query('select current_user')->fetchColumn();
+    $escapedUser = str_replace('"', '""', $user);
+    $pdo->exec('grant all on schema public to public');
+    $pdo->exec(sprintf('grant all on schema public to "%s"', $escapedUser));
+
+    return 'PostgreSQL public schema reset.';
+}
+
 function vercel_set_runtime_env(string $key, string $value): void
 {
     putenv("{$key}={$value}");
@@ -255,7 +276,9 @@ if (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) === '/__vercel-migra
 
         $fresh = (string) ($_GET['fresh'] ?? '') === '1';
 
-        $kernel->call($fresh ? 'migrate:fresh' : 'migrate', ['--force' => true]);
+        $resetOutput = $fresh ? vercel_reset_postgres_schema() : null;
+
+        $kernel->call('migrate', ['--force' => true]);
         $migrationOutput = $kernel->output();
 
         $kernel->call('db:seed', ['--force' => true]);
@@ -263,15 +286,23 @@ if (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) === '/__vercel-migra
 
         echo json_encode([
             'status' => 'ok',
+            'reset' => $resetOutput,
             'migrate' => trim($migrationOutput),
             'seed' => trim($seedOutput),
             'health' => vercel_database_status(),
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     } catch (Throwable $exception) {
+        $messages = [];
+
+        for ($current = $exception; $current instanceof Throwable; $current = $current->getPrevious()) {
+            $messages[] = $current->getMessage();
+        }
+
         http_response_code(500);
         echo json_encode([
             'status' => 'failed',
             'error' => $exception->getMessage(),
+            'messages' => $messages,
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     }
 
