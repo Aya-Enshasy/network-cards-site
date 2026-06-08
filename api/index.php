@@ -214,11 +214,14 @@ if (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) === '/__vercel-migra
     header('Content-Type: application/json');
 
     try {
-        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-        $migrationOutput = \Illuminate\Support\Facades\Artisan::output();
+        $kernel = $app->make(\Illuminate\Contracts\Console\Kernel::class);
+        $kernel->bootstrap();
 
-        \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]);
-        $seedOutput = \Illuminate\Support\Facades\Artisan::output();
+        $kernel->call('migrate', ['--force' => true]);
+        $migrationOutput = $kernel->output();
+
+        $kernel->call('db:seed', ['--force' => true]);
+        $seedOutput = $kernel->output();
 
         echo json_encode([
             'status' => 'ok',
