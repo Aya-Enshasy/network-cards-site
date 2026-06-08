@@ -264,6 +264,15 @@
                                 استيراد الملف
                             </button>
                         </form>
+
+                        @if(session('import_errors'))
+                            <div class="edu-import-errors">
+                                <strong>ملاحظات آخر استيراد</strong>
+                                @foreach(session('import_errors') as $importError)
+                                    <span>{{ $importError }}</span>
+                                @endforeach
+                            </div>
+                        @endif
                     </section>
 
                     <section class="edu-card edu-tests-card">

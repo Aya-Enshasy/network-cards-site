@@ -4396,6 +4396,29 @@ input[type='file']::file-selector-button {
     background: linear-gradient(135deg, #071126, #17223a);
 }
 
+.edu-import-errors {
+    display: grid;
+    gap: 0.48rem;
+    margin-top: 1rem;
+    border: 1px solid rgba(239, 91, 103, 0.18);
+    border-radius: var(--nz-radius);
+    background: #fff4f5;
+    padding: 0.85rem;
+}
+
+.edu-import-errors strong {
+    color: #9f1d2b;
+    font-size: 0.86rem;
+    font-weight: 950;
+}
+
+.edu-import-errors span {
+    color: #6f2330;
+    font-size: 0.82rem;
+    font-weight: 800;
+    line-height: 1.7;
+}
+
 /* Store, checkout, customer order pages */
 .shop-shell,
 .premium-shell {
