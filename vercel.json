@@ -3,7 +3,7 @@
   "version": 2,
   "framework": null,
   "installCommand": "npm ci",
-  "buildCommand": "npm run build",
+  "buildCommand": "npm run build && rm -f public/index.php",
   "outputDirectory": "public",
   "functions": {
     "api/index.php": {
@@ -11,6 +11,14 @@
     }
   },
   "routes": [
+    {
+      "src": "^/$",
+      "dest": "/api/index.php"
+    },
+    {
+      "src": "^/index\\.php$",
+      "dest": "/api/index.php"
+    },
     {
       "handle": "filesystem"
     },
