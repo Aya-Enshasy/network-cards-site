@@ -17,21 +17,54 @@
                     </p>
                 </div>
 
-                <div class="grid gap-4 md:grid-cols-3">
-                    <div class="payment-card">
-                        <span class="icon-chip">JP</span>
-                        <h2>Jawwal Pay</h2>
-                        <p>{{ $network->wallet_number ?: 'غير محدد' }}</p>
+                <div class="payment-method-grid">
+                    <div class="payment-card payment-method-card">
+                        <div class="payment-method-head">
+                            <span class="icon-chip">JP</span>
+                            <div>
+                                <small>Jawwal Pay</small>
+                                <h2>جوال باي</h2>
+                            </div>
+                        </div>
+                        <strong class="payment-value" dir="ltr">{{ $network->wallet_number ?: 'غير محدد' }}</strong>
+                        @if(filled($network->wallet_number))
+                            <button class="payment-copy-button" type="button" data-copy-text="{{ $network->wallet_number }}" data-copy-label="تم نسخ رقم Jawwal Pay">
+                                <i data-lucide="copy"></i>
+                                نسخ الرقم
+                            </button>
+                        @endif
                     </div>
-                    <div class="payment-card">
-                        <span class="icon-chip">BP</span>
-                        <h2>Bank of Palestine</h2>
-                        <p>{{ $network->bank_account ?: 'غير محدد' }}</p>
+                    <div class="payment-card payment-method-card">
+                        <div class="payment-method-head">
+                            <span class="icon-chip">BP</span>
+                            <div>
+                                <small>Bank of Palestine</small>
+                                <h2>حساب البنك</h2>
+                            </div>
+                        </div>
+                        <strong class="payment-value payment-value-bank" dir="ltr">{{ $network->bank_account ?: 'غير محدد' }}</strong>
+                        @if(filled($network->bank_account))
+                            <button class="payment-copy-button" type="button" data-copy-text="{{ $network->bank_account }}" data-copy-label="تم نسخ حساب البنك">
+                                <i data-lucide="copy"></i>
+                                نسخ الحساب
+                            </button>
+                        @endif
                     </div>
-                    <div class="payment-card">
-                        <span class="icon-chip">BT</span>
-                        <h2>تحويل بنكي</h2>
-                        <p>{{ $network->bank_transfer_details ?: 'غير محدد' }}</p>
+                    <div class="payment-card payment-method-card">
+                        <div class="payment-method-head">
+                            <span class="icon-chip">BT</span>
+                            <div>
+                                <small>تحويل بنكي</small>
+                                <h2>تعليمات التحويل</h2>
+                            </div>
+                        </div>
+                        <p class="payment-instructions">{{ $network->bank_transfer_details ?: 'غير محدد' }}</p>
+                        @if(filled($network->bank_transfer_details))
+                            <button class="payment-copy-button" type="button" data-copy-text="{{ $network->bank_transfer_details }}" data-copy-label="تم نسخ تعليمات التحويل">
+                                <i data-lucide="copy"></i>
+                                نسخ التعليمات
+                            </button>
+                        @endif
                     </div>
                 </div>
 

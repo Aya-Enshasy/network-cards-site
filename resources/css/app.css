@@ -4938,12 +4938,11 @@ input[type='file']::file-selector-button {
     }
 
     .shop-stage {
-        width: 100vw;
-        max-width: 100vw;
+        width: calc(100vw - 1.5rem);
+        max-width: 320px;
         min-height: 100vh;
-        margin: 0;
-        border-inline: 0;
-        border-radius: 0;
+        margin: 0 auto;
+        border-radius: var(--nz-radius);
     }
 
     .shop-grid {
@@ -5030,5 +5029,142 @@ input[type='file']::file-selector-button {
 
     .edu-profile {
         gap: 0.5rem;
+    }
+}
+
+/* Payment settings and single-form login overrides */
+.saas-login-shell.owner-login-shell {
+    direction: rtl;
+    display: flex !important;
+    width: 100%;
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+}
+
+.saas-login-shell .owner-login-container {
+    width: min(100%, 26rem) !important;
+    max-width: 26rem !important;
+}
+
+.saas-login-shell .centered-login-card {
+    width: 100% !important;
+    max-width: 26rem !important;
+    margin-inline: auto !important;
+}
+
+.payment-method-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.payment-method-card {
+    display: grid;
+    align-content: start;
+    gap: 0.9rem;
+}
+
+.payment-method-head {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.payment-method-head small,
+.payment-method-head h2 {
+    display: block;
+}
+
+.payment-method-head small {
+    color: var(--nz-muted);
+    font-size: 0.75rem;
+    font-weight: 950;
+}
+
+.payment-method-head h2 {
+    margin-top: 0.1rem;
+    color: var(--nz-ink);
+    font-size: 1.05rem;
+    font-weight: 950;
+}
+
+.payment-value {
+    direction: ltr;
+    display: block;
+    width: 100%;
+    border: 1px solid var(--nz-line);
+    border-radius: var(--nz-radius);
+    background: #fbfdff;
+    padding: 0.82rem 0.9rem;
+    color: var(--nz-ink);
+    font-size: 1.18rem;
+    font-weight: 950;
+    line-height: 1.35;
+    text-align: left;
+    overflow-wrap: anywhere;
+}
+
+.payment-value-bank {
+    font-size: 0.98rem;
+}
+
+.payment-instructions {
+    min-height: 4.2rem;
+    border: 1px solid var(--nz-line);
+    border-radius: var(--nz-radius);
+    background: #fbfdff;
+    padding: 0.82rem 0.9rem;
+    color: var(--nz-ink);
+    font-size: 0.98rem;
+    font-weight: 950;
+    line-height: 1.75;
+}
+
+.payment-copy-button {
+    display: inline-flex;
+    min-height: 2.45rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    border: 1px solid rgba(242, 100, 69, 0.2);
+    border-radius: var(--nz-radius);
+    background: var(--nz-coral-soft);
+    color: var(--nz-coral-dark);
+    padding: 0.62rem 0.85rem;
+    font-size: 0.84rem;
+    font-weight: 950;
+}
+
+.payment-copy-button:hover {
+    border-color: rgba(242, 100, 69, 0.36);
+    background: #ffe4db;
+}
+
+.payment-settings-form textarea {
+    min-height: 6rem;
+}
+
+@media (max-width: 980px) {
+    .payment-method-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 520px) {
+    .saas-login-shell.owner-login-shell {
+        padding: 1rem;
+    }
+
+    .saas-login-shell .owner-login-container,
+    .saas-login-shell .centered-login-card {
+        width: min(100%, 23rem) !important;
+        max-width: 23rem !important;
     }
 }

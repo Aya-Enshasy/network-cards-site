@@ -193,6 +193,45 @@
                         </form>
                     </section>
 
+                    <section class="edu-card edu-payment-settings-card" id="payment-settings">
+                        <div class="edu-card-head">
+                            <div>
+                                <span>الدفع والتحويل</span>
+                                <h2>بيانات الدفع للزبون</h2>
+                                <p>هذه البيانات تظهر في صفحة الدفع ويمكن للزبون نسخها مباشرة.</p>
+                            </div>
+                            <span class="edu-soft-icon"><i data-lucide="wallet-cards"></i></span>
+                        </div>
+
+                        <form action="{{ route('dashboard.payment.update') }}" method="POST" class="edu-upload-form payment-settings-form">
+                            @csrf
+                            <input type="hidden" name="network_id" value="{{ $network->id }}">
+                            <input type="hidden" name="name" value="{{ $network->name }}">
+                            <input type="hidden" name="owner_name" value="{{ auth()->user()->name }}">
+                            <input type="hidden" name="description" value="{{ $network->description }}">
+
+                            <label class="field">
+                                <span>Jawwal Pay</span>
+                                <input name="wallet_number" value="{{ old('wallet_number', $network->wallet_number) }}" placeholder="0599 123 456" dir="ltr">
+                            </label>
+
+                            <label class="field">
+                                <span>Bank of Palestine</span>
+                                <input name="bank_account" value="{{ old('bank_account', $network->bank_account) }}" placeholder="PS92 PALS 0000 0000 1234 5678" dir="ltr">
+                            </label>
+
+                            <label class="field">
+                                <span>تعليمات التحويل البنكي</span>
+                                <textarea name="bank_transfer_details" rows="3" placeholder="حوّل المبلغ ثم ارفع صورة الوصل من صفحة الدفع.">{{ old('bank_transfer_details', $network->bank_transfer_details) }}</textarea>
+                            </label>
+
+                            <button class="btn btn-primary w-full" type="submit">
+                                <i data-lucide="save"></i>
+                                حفظ بيانات الدفع
+                            </button>
+                        </form>
+                    </section>
+
                     <section class="edu-card edu-upload-card">
                         <div class="edu-card-head">
                             <div>

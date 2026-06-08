@@ -8,6 +8,7 @@ import {
     Bell,
     Boxes,
     CheckCircle2,
+    Copy,
     CreditCard,
     ExternalLink,
     FileSpreadsheet,
@@ -171,6 +172,28 @@ function collectCopyLines() {
         .join('\n');
 }
 
+async function copyToClipboard(text) {
+    if (navigator.clipboard?.writeText) {
+        try {
+            await navigator.clipboard.writeText(text);
+            return;
+        } catch {
+            // Fall back for non-secure deployments where Clipboard API is blocked.
+        }
+    }
+
+    const input = document.createElement('textarea');
+    input.value = text;
+    input.setAttribute('readonly', '');
+    input.style.position = 'fixed';
+    input.style.inset = '0 auto auto 0';
+    input.style.opacity = '0';
+    document.body.append(input);
+    input.select();
+    document.execCommand('copy');
+    input.remove();
+}
+
 function setupCopyActions() {
     document.addEventListener('click', async (event) => {
         const button = event.target.closest('[data-copy-text], [data-copy-all]');
@@ -185,7 +208,7 @@ function setupCopyActions() {
             return;
         }
 
-        await navigator.clipboard.writeText(text);
+        await copyToClipboard(text);
         showToast(button.dataset.copyLabel || 'تم النسخ بنجاح');
     });
 }
@@ -432,6 +455,7 @@ function setupIcons() {
             Bell,
             Boxes,
             CheckCircle2,
+            Copy,
             CreditCard,
             ExternalLink,
             FileSpreadsheet,
