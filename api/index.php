@@ -334,14 +334,18 @@ if (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) === '/__vercel-debug
     header('Content-Type: application/json');
 
     try {
+        $app['config']->set('app.debug', true);
+
         $request = \Illuminate\Http\Request::create('/', 'GET');
         $response = $app->handle($request, \Symfony\Component\HttpKernel\HttpKernelInterface::MAIN_REQUEST, false);
+        $content = (string) $response->getContent();
 
         echo json_encode([
             'status' => 'ok',
             'response_status' => $response->getStatusCode(),
             'content_type' => $response->headers->get('content-type'),
-            'html_length' => strlen((string) $response->getContent()),
+            'html_length' => strlen($content),
+            'text_sample' => mb_substr(trim(preg_replace('/\s+/', ' ', strip_tags($content))), 0, 2000),
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     } catch (Throwable $exception) {
         $messages = [];
