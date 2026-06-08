@@ -1,0 +1,36 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "version": 2,
+  "framework": null,
+  "installCommand": "npm ci",
+  "buildCommand": "npm run build",
+  "outputDirectory": "public",
+  "functions": {
+    "api/index.php": {
+      "runtime": "vercel-php@0.7.4"
+    }
+  },
+  "routes": [
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/api/index.php"
+    }
+  ],
+  "env": {
+    "APP_ENV": "production",
+    "APP_DEBUG": "false",
+    "LOG_CHANNEL": "stderr",
+    "CACHE_STORE": "array",
+    "SESSION_DRIVER": "cookie",
+    "QUEUE_CONNECTION": "sync",
+    "VIEW_COMPILED_PATH": "/tmp/views",
+    "APP_SERVICES_CACHE": "/tmp/cache/services.php",
+    "APP_PACKAGES_CACHE": "/tmp/cache/packages.php",
+    "APP_CONFIG_CACHE": "/tmp/cache/config.php",
+    "APP_ROUTES_CACHE": "/tmp/cache/routes.php",
+    "APP_EVENTS_CACHE": "/tmp/cache/events.php"
+  }
+}
