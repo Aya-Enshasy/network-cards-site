@@ -1,7 +1,54 @@
 @extends('layouts.app', ['title' => 'دخول صاحب الشركة'])
 
 @section('content')
-    <main class="owner-login-shell centered-login-shell">
+    <main class="owner-login-shell centered-login-shell saas-login-shell">
+        <section class="login-showcase" aria-label="Net Zone">
+            <div class="login-showcase-brand">
+                <span class="brand-image"><img src="{{ asset('images/net-zone-logo.png') }}" alt=""></span>
+                <div>
+                    <strong>Net Zone</strong>
+                    <small>مركز التحكم</small>
+                </div>
+            </div>
+
+            <div class="login-dashboard-preview">
+                <div class="preview-sidebar">
+                    <span></span>
+                    <b></b>
+                    <b></b>
+                    <b></b>
+                </div>
+                <div class="preview-main">
+                    <div class="preview-topline">
+                        <span></span>
+                        <strong></strong>
+                    </div>
+                    <div class="preview-metrics">
+                        <div>
+                            <small>طلبات اليوم</small>
+                            <strong>48</strong>
+                        </div>
+                        <div>
+                            <small>المبيعات</small>
+                            <strong>2.4K</strong>
+                        </div>
+                        <div>
+                            <small>المخزون</small>
+                            <strong>814</strong>
+                        </div>
+                    </div>
+                    <div class="preview-chart">
+                        <i style="height: 34%"></i>
+                        <i style="height: 58%"></i>
+                        <i style="height: 44%"></i>
+                        <i style="height: 72%"></i>
+                        <i style="height: 62%"></i>
+                        <i style="height: 86%"></i>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <section class="owner-login-container">
             <form action="{{ route('login.submit') }}" method="POST" class="login-card centered-login-card">
                 @csrf
