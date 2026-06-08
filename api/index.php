@@ -211,6 +211,33 @@ function vercel_prepare_database_environment(): void
     }
 }
 
+function vercel_prepare_app_key_environment(): void
+{
+    $key = vercel_env_value('APP_KEY');
+
+    if (! is_string($key)) {
+        return;
+    }
+
+    $key = trim($key, " \t\n\r\0\x0B\"'");
+
+    if (str_starts_with($key, 'APP_KEY=')) {
+        $key = substr($key, 8);
+    }
+
+    $key = trim($key, " \t\n\r\0\x0B\"'");
+
+    if (! str_starts_with($key, 'base64:')) {
+        $decoded = base64_decode($key, true);
+
+        if (is_string($decoded) && strlen($decoded) === 32) {
+            $key = 'base64:'.$key;
+        }
+    }
+
+    vercel_set_runtime_env('APP_KEY', $key);
+}
+
 if (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) === '/__vercel-health') {
     $key = vercel_key_status();
     $database = vercel_database_status();
@@ -242,6 +269,7 @@ foreach (['/tmp/cache/config.php', '/tmp/cache/services.php', '/tmp/cache/packag
 }
 
 vercel_prepare_database_environment();
+vercel_prepare_app_key_environment();
 
 if (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) === '/__vercel-debug-home') {
     vercel_set_runtime_env('APP_DEBUG', 'true');
