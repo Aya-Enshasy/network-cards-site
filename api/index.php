@@ -248,6 +248,12 @@ function vercel_prepare_url_environment(): void
 
     $url = 'https://'.preg_replace('/^https?:\/\//i', '', $host);
 
+    $_SERVER['HTTPS'] = 'on';
+    $_SERVER['REQUEST_SCHEME'] = 'https';
+    $_SERVER['SERVER_PORT'] = '443';
+    $_SERVER['HTTP_X_FORWARDED_PROTO'] = 'https';
+    $_SERVER['HTTP_X_FORWARDED_SSL'] = 'on';
+
     vercel_set_runtime_env('APP_URL', $url);
     vercel_set_runtime_env('ASSET_URL', $url);
 }
