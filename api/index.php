@@ -4,7 +4,11 @@ function vercel_env_value(string $key): ?string
 {
     $value = getenv($key);
 
-    return $value === false || $value === '' ? null : $value;
+    if ($value === false || $value === '') {
+        $value = $_ENV[$key] ?? $_SERVER[$key] ?? null;
+    }
+
+    return $value === false || $value === '' || $value === null ? null : (string) $value;
 }
 
 function vercel_key_status(): array
@@ -181,7 +185,7 @@ function vercel_prepare_database_environment(): void
         vercel_set_runtime_env('DB_URL', $url);
     }
 
-    if (! vercel_env_value('DB_CONNECTION') && preg_match('/^postgres(?:ql)?:\/\//i', $url)) {
+    if (preg_match('/^postgres(?:ql)?:\/\//i', $url)) {
         vercel_set_runtime_env('DB_CONNECTION', 'pgsql');
     }
 }

@@ -6,7 +6,7 @@ use Pdo\Mysql;
 $databaseUrl = env('DB_URL') ?: env('DATABASE_URL') ?: env('POSTGRES_URL');
 $defaultConnection = env('DB_CONNECTION');
 
-if (! $defaultConnection && is_string($databaseUrl) && preg_match('/^postgres(?:ql)?:\/\//i', $databaseUrl)) {
+if (is_string($databaseUrl) && preg_match('/^postgres(?:ql)?:\/\//i', $databaseUrl)) {
     $defaultConnection = 'pgsql';
 }
 
