@@ -15,6 +15,7 @@ Route::get('/owner', fn () => auth()->check() ? redirect()->route('dashboard') :
 Route::get('/networks/{network:slug}', [StoreController::class, 'show'])->name('store.network');
 Route::post('/checkout/start', [StoreController::class, 'startCheckout'])->name('checkout.start');
 Route::get('/checkout/{network:slug}', [StoreController::class, 'checkout'])->name('checkout.show');
+Route::post('/checkout/{network:slug}/receipt-signature', [OrderController::class, 'receiptSignature'])->middleware('throttle:20,1')->name('checkout.receipt-signature');
 Route::post('/checkout/{network:slug}', [OrderController::class, 'store'])->middleware('throttle:10,1')->name('orders.store');
 Route::get('/track', [OrderController::class, 'recoverForm'])->name('orders.track');
 Route::post('/track', [OrderController::class, 'recover'])->middleware('throttle:10,1')->name('orders.track.submit');

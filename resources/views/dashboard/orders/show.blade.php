@@ -98,9 +98,10 @@
                             <h2 class="text-xl font-black text-slate-950">وصل الدفع</h2>
                             <span class="icon-chip"><i data-lucide="image"></i></span>
                         </div>
-                        @if($order->receipt?->image)
-                            <a href="{{ asset('storage/'.$order->receipt->image) }}" target="_blank">
-                                <img class="mt-4 aspect-[4/5] w-full rounded-lg object-cover ring-1 ring-slate-200" src="{{ asset('storage/'.$order->receipt->image) }}" alt="وصل الدفع">
+                        @php($receiptImageUrl = $order->receipt?->image_url)
+                        @if($receiptImageUrl)
+                            <a href="{{ $receiptImageUrl }}" target="_blank">
+                                <img class="mt-4 aspect-[4/5] w-full rounded-lg object-cover ring-1 ring-slate-200" src="{{ $receiptImageUrl }}" alt="وصل الدفع">
                             </a>
                         @else
                             <p class="mt-3 text-sm text-slate-500">لا توجد صورة وصل.</p>

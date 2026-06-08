@@ -4,16 +4,41 @@ namespace App\Http\Controllers;
 
 use App\Models\Network;
 use App\Models\Order;
+use App\Services\CloudinaryReceiptService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Throwable;
 
 class OrderController extends Controller
 {
-    public function store(Request $request, Network $network): RedirectResponse
+    public function receiptSignature(Network $network, CloudinaryReceiptService $cloudinary): JsonResponse
+    {
+        abort_if($network->status !== 'active', 404);
+
+        if (session("checkout.{$network->id}", []) === []) {
+            return response()->json([
+                'message' => 'اختر البطاقات أولا قبل رفع وصل الدفع.',
+            ], 409);
+        }
+
+        try {
+            return response()->json($cloudinary->signedUploadPayload($network));
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return response()->json([
+                'message' => 'تعذر تجهيز رفع وصل الدفع. تأكد من إعدادات Cloudinary.',
+            ], 422);
+        }
+    }
+
+    public function store(Request $request, Network $network, CloudinaryReceiptService $cloudinary): RedirectResponse
     {
         abort_if($network->status !== 'active', 404);
 
@@ -21,8 +46,23 @@ class OrderController extends Controller
             'customer_name' => ['required', 'string', 'max:120'],
             'phone' => ['required', 'string', 'max:30'],
             'notes' => ['nullable', 'string', 'max:1000'],
-            'receipt' => ['required', 'image', 'max:4096'],
+            'receipt_url' => ['required', 'url', 'max:2048'],
+            'receipt_public_id' => ['required', 'string', 'max:255'],
+            'receipt_original_name' => ['nullable', 'string', 'max:255'],
         ]);
+
+        try {
+            $validReceiptReference = $cloudinary->isValidReceiptReference($network, $data['receipt_url'], $data['receipt_public_id']);
+        } catch (Throwable $exception) {
+            report($exception);
+            $validReceiptReference = false;
+        }
+
+        if (! $validReceiptReference) {
+            throw ValidationException::withMessages([
+                'receipt_url' => 'تعذر تأكيد صورة وصل الدفع. أعد اختيار الصورة وحاول مرة أخرى.',
+            ]);
+        }
 
         $cart = session("checkout.{$network->id}", []);
 
@@ -39,9 +79,7 @@ class OrderController extends Controller
             return redirect()->route('store.network', $network->slug)->with('error', 'الباقات المختارة غير متاحة حاليًا.');
         }
 
-        $receiptPath = $request->file('receipt')->store('payment-receipts', 'public');
-
-        $order = DB::transaction(function () use ($network, $packages, $cart, $data, $receiptPath) {
+        $order = DB::transaction(function () use ($network, $packages, $cart, $data) {
             $total = 0;
 
             foreach ($cart as $packageId => $quantity) {
@@ -80,7 +118,8 @@ class OrderController extends Controller
             }
 
             $order->receipt()->create([
-                'image' => $receiptPath,
+                'image' => $data['receipt_url'],
+                'image_public_id' => $data['receipt_public_id'],
                 'notes' => $data['notes'] ?? null,
                 'status' => 'pending',
             ]);

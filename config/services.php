@@ -28,6 +28,15 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'cloudinary' => [
+        'url' => env('CLOUDINARY_URL'),
+        'cloud_name' => env('CLOUDINARY_CLOUD_NAME'),
+        'api_key' => env('CLOUDINARY_API_KEY'),
+        'api_secret' => env('CLOUDINARY_API_SECRET'),
+        'receipt_folder' => env('CLOUDINARY_RECEIPT_FOLDER', 'network-site/payment-receipts'),
+        'max_receipt_kb' => (int) env('CLOUDINARY_MAX_RECEIPT_KB', 4096),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

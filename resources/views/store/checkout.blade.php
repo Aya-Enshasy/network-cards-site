@@ -35,7 +35,14 @@
                     </div>
                 </div>
 
-                <form action="{{ route('orders.store', $network->slug) }}" method="POST" enctype="multipart/form-data" class="glass-panel space-y-4 p-6">
+                <form
+                    action="{{ route('orders.store', $network->slug) }}"
+                    method="POST"
+                    class="glass-panel space-y-4 p-6"
+                    data-cloudinary-receipt-form
+                    data-cloudinary-signature-url="{{ route('checkout.receipt-signature', $network->slug) }}"
+                    data-cloudinary-max-bytes="{{ (int) config('services.cloudinary.max_receipt_kb', 4096) * 1024 }}"
+                >
                     @csrf
                     <div class="flex items-center gap-3">
                         <span class="icon-chip"><i data-lucide="user-round"></i></span>
@@ -60,7 +67,11 @@
                     </label>
                     <label class="field upload-drop">
                         <span>صورة وصل الدفع</span>
-                        <input name="receipt" type="file" accept="image/*" required>
+                        <input type="file" accept="image/*" required data-cloudinary-receipt-file>
+                        <input name="receipt_url" type="hidden" value="{{ old('receipt_url') }}" data-cloudinary-receipt-url>
+                        <input name="receipt_public_id" type="hidden" value="{{ old('receipt_public_id') }}" data-cloudinary-receipt-public-id>
+                        <input name="receipt_original_name" type="hidden" value="{{ old('receipt_original_name') }}" data-cloudinary-receipt-original-name>
+                        <small data-cloudinary-receipt-status role="status" aria-live="polite"></small>
                     </label>
                     <button class="btn btn-primary w-full md:w-auto" type="submit">إرسال للمراجعة</button>
                 </form>

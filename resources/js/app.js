@@ -251,6 +251,173 @@ function setupNotifications() {
     });
 }
 
+function setupCloudinaryReceiptUpload() {
+    const form = document.querySelector('[data-cloudinary-receipt-form]');
+
+    if (!form) {
+        return;
+    }
+
+    const fileInput = form.querySelector('[data-cloudinary-receipt-file]');
+    const receiptUrl = form.querySelector('[data-cloudinary-receipt-url]');
+    const publicId = form.querySelector('[data-cloudinary-receipt-public-id]');
+    const originalName = form.querySelector('[data-cloudinary-receipt-original-name]');
+    const status = form.querySelector('[data-cloudinary-receipt-status]');
+    const submitButton = form.querySelector('button[type="submit"]');
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const maxBytes = Number.parseInt(form.dataset.cloudinaryMaxBytes || '0', 10);
+    let isUploading = false;
+
+    if (!fileInput || !receiptUrl || !publicId || !form.dataset.cloudinarySignatureUrl) {
+        return;
+    }
+
+    const setStatus = (message) => {
+        if (status) {
+            status.textContent = message;
+        }
+    };
+
+    const setBusy = (busy) => {
+        if (!submitButton) {
+            return;
+        }
+
+        if (!submitButton.dataset.defaultText) {
+            submitButton.dataset.defaultText = submitButton.textContent.trim();
+        }
+
+        submitButton.disabled = busy;
+        submitButton.textContent = busy ? 'جاري رفع الوصل...' : submitButton.dataset.defaultText;
+    };
+
+    const clearReceiptReference = () => {
+        receiptUrl.value = '';
+        publicId.value = '';
+
+        if (originalName) {
+            originalName.value = '';
+        }
+    };
+
+    const formatMegabytes = (bytes) => Math.max(1, Math.floor(bytes / 1024 / 1024));
+
+    const fetchJson = async (url, options = {}) => {
+        const response = await fetch(url, options);
+        const payload = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            throw new Error(payload.message || payload.error?.message || 'تعذر رفع صورة الوصل.');
+        }
+
+        return payload;
+    };
+
+    const uploadReceipt = async (file) => {
+        if (!file.type.startsWith('image/')) {
+            throw new Error('اختر صورة صالحة لوصل الدفع.');
+        }
+
+        if (maxBytes > 0 && file.size > maxBytes) {
+            throw new Error(`حجم الصورة يجب ألا يتجاوز ${formatMegabytes(maxBytes)} ميجابايت.`);
+        }
+
+        const signature = await fetchJson(form.dataset.cloudinarySignatureUrl, {
+            method: 'POST',
+            headers: {
+                Accept: 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+            },
+        });
+
+        if (signature.max_bytes && file.size > signature.max_bytes) {
+            throw new Error(`حجم الصورة يجب ألا يتجاوز ${formatMegabytes(signature.max_bytes)} ميجابايت.`);
+        }
+
+        const body = new FormData();
+        body.append('file', file);
+        body.append('api_key', signature.api_key);
+
+        Object.entries(signature.params || {}).forEach(([key, value]) => {
+            body.append(key, value);
+        });
+
+        const upload = await fetchJson(signature.upload_url, {
+            method: 'POST',
+            body,
+        });
+
+        if (!upload.secure_url || !upload.public_id) {
+            throw new Error('تعذر حفظ رابط وصل الدفع.');
+        }
+
+        receiptUrl.value = upload.secure_url;
+        publicId.value = upload.public_id;
+
+        if (originalName) {
+            originalName.value = file.name;
+        }
+    };
+
+    if (receiptUrl.value && publicId.value) {
+        fileInput.required = false;
+        setStatus('تم تجهيز صورة الوصل.');
+    }
+
+    fileInput.addEventListener('change', () => {
+        clearReceiptReference();
+        fileInput.required = true;
+        setStatus(fileInput.files?.[0]?.name || '');
+    });
+
+    form.addEventListener('submit', async (event) => {
+        if (receiptUrl.value && publicId.value) {
+            fileInput.disabled = true;
+            fileInput.required = false;
+            return;
+        }
+
+        if (isUploading) {
+            event.preventDefault();
+            return;
+        }
+
+        event.preventDefault();
+
+        const file = fileInput.files?.[0];
+
+        if (!file) {
+            setStatus('اختر صورة وصل الدفع.');
+            fileInput.focus();
+            return;
+        }
+
+        isUploading = true;
+        setBusy(true);
+        setStatus('جاري رفع صورة الوصل...');
+
+        try {
+            await uploadReceipt(file);
+            setStatus('تم رفع صورة الوصل.');
+            fileInput.disabled = true;
+            fileInput.required = false;
+            form.requestSubmit();
+        } catch (error) {
+            clearReceiptReference();
+            setStatus(error.message);
+            showToast(error.message);
+        } finally {
+            isUploading = false;
+
+            if (!receiptUrl.value || !publicId.value) {
+                fileInput.disabled = false;
+                fileInput.required = true;
+                setBusy(false);
+            }
+        }
+    });
+}
+
 function setupIcons() {
     createIcons({
         icons: {
@@ -295,6 +462,7 @@ function boot() {
     setupOrderAccess();
     setupCopyActions();
     setupNotifications();
+    setupCloudinaryReceiptUpload();
     setupIcons();
     Alpine.start();
 }
