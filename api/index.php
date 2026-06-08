@@ -320,4 +320,45 @@ if (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) === '/__vercel-migra
     exit;
 }
 
+if (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) === '/__vercel-debug-home') {
+    $expectedToken = vercel_env_value('VERCEL_MIGRATE_TOKEN');
+    $providedToken = (string) ($_GET['token'] ?? '');
+
+    if (! is_string($expectedToken) || $expectedToken === '' || ! hash_equals($expectedToken, $providedToken)) {
+        http_response_code(403);
+        header('Content-Type: application/json');
+        echo json_encode(['status' => 'forbidden'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        exit;
+    }
+
+    header('Content-Type: application/json');
+
+    try {
+        $view = $app->make(\App\Http\Controllers\StoreController::class)->home();
+        $html = $view->render();
+
+        echo json_encode([
+            'status' => 'ok',
+            'networks' => \App\Models\Network::query()->count(),
+            'html_length' => strlen($html),
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    } catch (Throwable $exception) {
+        $messages = [];
+
+        for ($current = $exception; $current instanceof Throwable; $current = $current->getPrevious()) {
+            $messages[] = $current->getMessage();
+        }
+
+        http_response_code(500);
+        echo json_encode([
+            'status' => 'failed',
+            'messages' => $messages,
+            'file' => $exception->getFile(),
+            'line' => $exception->getLine(),
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    }
+
+    exit;
+}
+
 $app->handleRequest(\Illuminate\Http\Request::capture());
