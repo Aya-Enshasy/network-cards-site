@@ -162,6 +162,30 @@ function vercel_database_status(): array
     }
 }
 
+function vercel_set_runtime_env(string $key, string $value): void
+{
+    putenv("{$key}={$value}");
+    $_ENV[$key] = $value;
+    $_SERVER[$key] = $value;
+}
+
+function vercel_prepare_database_environment(): void
+{
+    $url = vercel_database_url();
+
+    if (! is_string($url)) {
+        return;
+    }
+
+    if (! vercel_env_value('DB_URL')) {
+        vercel_set_runtime_env('DB_URL', $url);
+    }
+
+    if (! vercel_env_value('DB_CONNECTION') && preg_match('/^postgres(?:ql)?:\/\//i', $url)) {
+        vercel_set_runtime_env('DB_CONNECTION', 'pgsql');
+    }
+}
+
 if (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) === '/__vercel-health') {
     $key = vercel_key_status();
     $database = vercel_database_status();
@@ -185,6 +209,14 @@ foreach (['/tmp/views', '/tmp/cache'] as $directory) {
         mkdir($directory, 0777, true);
     }
 }
+
+foreach (['/tmp/cache/config.php', '/tmp/cache/services.php', '/tmp/cache/packages.php', '/tmp/cache/routes.php', '/tmp/cache/events.php'] as $cacheFile) {
+    if (is_file($cacheFile)) {
+        @unlink($cacheFile);
+    }
+}
+
+vercel_prepare_database_environment();
 
 define('LARAVEL_START', microtime(true));
 
@@ -217,7 +249,9 @@ if (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) === '/__vercel-migra
         $kernel = $app->make(\Illuminate\Contracts\Console\Kernel::class);
         $kernel->bootstrap();
 
-        $kernel->call('migrate', ['--force' => true]);
+        $fresh = (string) ($_GET['fresh'] ?? '') === '1';
+
+        $kernel->call($fresh ? 'migrate:fresh' : 'migrate', ['--force' => true]);
         $migrationOutput = $kernel->output();
 
         $kernel->call('db:seed', ['--force' => true]);
