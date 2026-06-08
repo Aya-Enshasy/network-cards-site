@@ -59,12 +59,57 @@ function setupCart() {
         maximumFractionDigits: 2,
     });
 
-    const clampInput = (input) => {
+    const quantityLimit = (input) => {
         const stock = Number.parseInt(input.dataset.stock || '100', 10);
+        const max = Number.parseInt(input.max || String(stock), 10);
+
+        if (Number.isNaN(stock) && Number.isNaN(max)) {
+            return 100;
+        }
+
+        if (Number.isNaN(stock)) {
+            return Math.max(0, max);
+        }
+
+        if (Number.isNaN(max)) {
+            return Math.max(0, stock);
+        }
+
+        return Math.max(0, Math.min(stock, max));
+    };
+
+    const clampInput = (input) => {
+        const stock = quantityLimit(input);
         const rawValue = Number.parseInt(input.value || '0', 10);
         const value = Number.isNaN(rawValue) ? 0 : Math.max(0, Math.min(stock, rawValue));
         input.value = String(value);
         return value;
+    };
+
+    const findQuantityButton = (input, selector) => Array
+        .from(form.querySelectorAll(selector))
+        .find((button) => button.dataset.target === input.id);
+
+    const setButtonState = (button, disabled) => {
+        if (!button) {
+            return;
+        }
+
+        button.disabled = disabled;
+        button.setAttribute('aria-disabled', String(disabled));
+    };
+
+    const syncQuantityControls = () => {
+        inputs.forEach((input) => {
+            const quantity = clampInput(input);
+            const limit = quantityLimit(input);
+            const card = input.closest('[data-package-card]');
+
+            input.disabled = limit <= 0;
+            card?.classList.toggle('is-out-of-stock', limit <= 0);
+            setButtonState(findQuantityButton(input, '[data-qty-minus]'), limit <= 0 || quantity <= 0);
+            setButtonState(findQuantityButton(input, '[data-qty-plus]'), limit <= 0 || quantity >= limit);
+        });
     };
 
     const updateSummary = () => {
@@ -109,20 +154,25 @@ function setupCart() {
         const totalPrice = selected.reduce((sum, item) => sum + item.subtotal, 0);
         summaryCount.textContent = `${formatter.format(totalQuantity)} بطاقة`;
         summaryTotal.textContent = `${formatter.format(totalPrice)} شيكل`;
+        syncQuantityControls();
     };
 
-    form.querySelectorAll('[data-qty-plus], [data-qty-minus]').forEach((button) => {
-        button.addEventListener('click', () => {
-            const input = document.getElementById(button.dataset.target);
+    form.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-qty-plus], [data-qty-minus]');
 
-            if (!input) {
-                return;
-            }
+        if (!button || !form.contains(button) || button.disabled) {
+            return;
+        }
 
-            const delta = button.hasAttribute('data-qty-plus') ? 1 : -1;
-            input.value = String((Number.parseInt(input.value || '0', 10) || 0) + delta);
-            updateSummary();
-        });
+        const input = document.getElementById(button.dataset.target);
+
+        if (!input) {
+            return;
+        }
+
+        const delta = button.hasAttribute('data-qty-plus') ? 1 : -1;
+        input.value = String((Number.parseInt(input.value || '0', 10) || 0) + delta);
+        updateSummary();
     });
 
     inputs.forEach((input) => input.addEventListener('input', updateSummary));

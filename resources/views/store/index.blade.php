@@ -45,7 +45,13 @@
 
                         <div class="package-grid">
                             @foreach($network->activePackages as $package)
-                                <article class="customer-package" data-package-card>
+                                @php
+                                    $availableCount = (int) $package->available_cards_count;
+                                    $orderLimit = min(100, $availableCount);
+                                    $isOutOfStock = $availableCount <= 0;
+                                @endphp
+
+                                <article class="customer-package {{ $isOutOfStock ? 'is-out-of-stock' : '' }}" data-package-card>
                                     <div class="package-top">
                                         <span class="package-icon"><i data-lucide="ticket"></i></span>
                                         <span class="price-pill">{{ number_format($package->price) }} NIS</span>
@@ -65,15 +71,19 @@
                                         </div>
                                         <div>
                                             <dt>المتاح</dt>
-                                            <dd>{{ $package->available_cards_count }}</dd>
+                                            <dd class="{{ $isOutOfStock ? 'stock-empty-text' : '' }}">{{ $isOutOfStock ? 'نفدت' : $availableCount }}</dd>
                                         </div>
                                     </dl>
 
                                     <div class="qty-control" aria-label="الكمية">
-                                        <button type="button" data-qty-minus data-target="qty-{{ $package->id }}">-</button>
-                                        <input id="qty-{{ $package->id }}" name="quantities[{{ $package->id }}]" value="0" inputmode="numeric" min="0" max="{{ min(100, $package->available_cards_count) }}" data-cart-input data-name="{{ $package->name }}" data-price="{{ $package->price }}" data-stock="{{ $package->available_cards_count }}">
-                                        <button type="button" data-qty-plus data-target="qty-{{ $package->id }}">+</button>
+                                        <button type="button" data-qty-minus data-target="qty-{{ $package->id }}" aria-label="تقليل الكمية" @disabled($orderLimit <= 0)>-</button>
+                                        <input id="qty-{{ $package->id }}" name="quantities[{{ $package->id }}]" value="0" inputmode="numeric" min="0" max="{{ $orderLimit }}" data-cart-input data-name="{{ $package->name }}" data-price="{{ $package->price }}" data-stock="{{ $availableCount }}" @disabled($orderLimit <= 0)>
+                                        <button type="button" data-qty-plus data-target="qty-{{ $package->id }}" aria-label="زيادة الكمية" @disabled($orderLimit <= 0)>+</button>
                                     </div>
+
+                                    @if($isOutOfStock)
+                                        <p class="stock-empty-note">لا يوجد مخزون حالياً. ارفع ملف البطاقات من لوحة صاحب المشروع.</p>
+                                    @endif
                                 </article>
                             @endforeach
                         </div>
