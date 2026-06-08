@@ -270,9 +270,19 @@ if (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) === '/__vercel-migra
 
     header('Content-Type: application/json');
 
+    $queries = [];
+
     try {
         $kernel = $app->make(\Illuminate\Contracts\Console\Kernel::class);
         $kernel->bootstrap();
+
+        \Illuminate\Support\Facades\DB::listen(function ($query) use (&$queries): void {
+            $queries[] = $query->sql;
+
+            if (count($queries) > 50) {
+                array_shift($queries);
+            }
+        });
 
         $fresh = (string) ($_GET['fresh'] ?? '') === '1';
 
@@ -303,6 +313,7 @@ if (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) === '/__vercel-migra
             'status' => 'failed',
             'error' => $exception->getMessage(),
             'messages' => $messages,
+            'queries' => $queries,
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     }
 
