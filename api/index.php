@@ -341,13 +341,15 @@ if (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) === '/__vercel-debug
         $request = \Illuminate\Http\Request::create('/', 'GET');
         $response = $app->handle($request, \Symfony\Component\HttpKernel\HttpKernelInterface::MAIN_REQUEST, false);
         $content = (string) $response->getContent();
+        $readableContent = preg_replace('/<style\b[^>]*>.*?<\/style>/is', ' ', $content);
+        $readableContent = preg_replace('/<script\b[^>]*>.*?<\/script>/is', ' ', (string) $readableContent);
 
         echo json_encode([
             'status' => 'ok',
             'response_status' => $response->getStatusCode(),
             'content_type' => $response->headers->get('content-type'),
             'html_length' => strlen($content),
-            'text_sample' => mb_substr(trim(preg_replace('/\s+/', ' ', strip_tags($content))), 0, 2000),
+            'text_sample' => mb_substr(trim(preg_replace('/\s+/', ' ', strip_tags((string) $readableContent))), 0, 3000),
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     } catch (Throwable $exception) {
         $messages = [];
