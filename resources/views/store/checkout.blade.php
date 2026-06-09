@@ -22,8 +22,8 @@
                         <div class="payment-method-head">
                             <span class="icon-chip">JP</span>
                             <div>
-                                <small>Jawwal Pay</small>
-                                <h2>جوال باي</h2>
+                                <small>Pal Pay</small>
+                                <h2>بال باي</h2>
                             </div>
                         </div>
                         <strong class="payment-value" dir="ltr">{{ $network->wallet_number ?: 'غير محدد' }}</strong>

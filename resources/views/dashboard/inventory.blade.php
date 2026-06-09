@@ -211,7 +211,7 @@
                             <input type="hidden" name="description" value="{{ $network->description }}">
 
                             <label class="field">
-                                <span>Jawwal Pay</span>
+                                <span>Pal Pay</span>
                                 <input name="wallet_number" value="{{ old('wallet_number', $network->wallet_number) }}" placeholder="0599 123 456" dir="ltr">
                             </label>
 
