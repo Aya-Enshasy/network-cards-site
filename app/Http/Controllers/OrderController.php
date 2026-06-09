@@ -209,24 +209,16 @@ class OrderController extends Controller
 
     private function newOrderNumber(Network $network): string
     {
-        $year = now()->year;
-        $next = Order::where('order_number', 'like', "ORD-{$year}-%")->count() + 1;
-
-        do {
-            $number = sprintf('ORD-%s-%06d', $year, $next);
-            $next++;
-        } while (Order::where('order_number', $number)->exists());
-
-        return $number;
+        return sprintf(
+            'ORD-%s-%s',
+            now()->format('YmdHis'),
+            Str::upper(Str::random(6)),
+        );
     }
 
     private function newAccessToken(): string
     {
-        do {
-            $token = Str::upper(Str::random(48));
-        } while (Order::where('access_token', $token)->exists());
-
-        return $token;
+        return Str::upper(Str::random(48));
     }
 
     private function signedOrderUrl(Order $order): string
