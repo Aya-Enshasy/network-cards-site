@@ -5273,3 +5273,55 @@ input[type='file']::file-selector-button {
         max-width: 23rem !important;
     }
 }
+
+/* Final responsive guards */
+@media (min-width: 981px) {
+    .edu-shell {
+        display: grid !important;
+        grid-template-columns: 252px minmax(0, 1fr) !important;
+    }
+
+    .edu-layout {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(290px, 330px) !important;
+    }
+
+    .shop-grid {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(320px, 340px) !important;
+    }
+
+    .customer-summary,
+    .premium-summary {
+        position: sticky !important;
+        top: 1rem;
+    }
+}
+
+@media (max-width: 980px) {
+    .edu-layout,
+    .shop-grid {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    .customer-summary,
+    .premium-summary {
+        position: static !important;
+    }
+}
+
+@media (max-width: 760px) {
+    .shop-stage {
+        width: min(calc(100vw - 1rem), 560px) !important;
+        max-width: none !important;
+    }
+
+    .shop-main,
+    .package-grid,
+    .customer-package,
+    .customer-summary,
+    .premium-summary {
+        min-width: 0 !important;
+        width: 100% !important;
+    }
+}
