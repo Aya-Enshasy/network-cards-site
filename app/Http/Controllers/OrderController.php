@@ -39,7 +39,7 @@ class OrderController extends Controller
         }
     }
 
-    public function store(Request $request, Network $network, CloudinaryReceiptService $cloudinary): RedirectResponse
+    public function store(Request $request, Network $network, CloudinaryReceiptService $cloudinary): RedirectResponse|JsonResponse
     {
         abort_if($network->status !== 'active', 404);
 
@@ -138,6 +138,20 @@ class OrderController extends Controller
         } catch (Throwable $exception) {
             report($exception);
 
+            if ($this->allowsOrderDebug($request)) {
+                $messages = [];
+
+                for ($current = $exception; $current instanceof Throwable; $current = $current->getPrevious()) {
+                    $messages[] = $current->getMessage();
+                }
+
+                return response()->json([
+                    'status' => 'failed',
+                    'exception' => $exception::class,
+                    'messages' => $messages,
+                ], 500);
+            }
+
             return back()
                 ->withErrors(['order' => 'تعذر إنشاء الطلب الآن. حاول مرة أخرى، وإذا استمرت المشكلة تواصل مع صاحب الشبكة.'])
                 ->withInput();
@@ -218,5 +232,16 @@ class OrderController extends Controller
     private function signedOrderUrl(Order $order): string
     {
         return URL::signedRoute('orders.show', $order->access_token, null, false);
+    }
+
+    private function allowsOrderDebug(Request $request): bool
+    {
+        $expectedToken = env('VERCEL_MIGRATE_TOKEN');
+        $providedToken = (string) $request->input('debug_token', '');
+
+        return is_string($expectedToken)
+            && $expectedToken !== ''
+            && $providedToken !== ''
+            && hash_equals($expectedToken, $providedToken);
     }
 }
