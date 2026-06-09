@@ -126,6 +126,63 @@ function vercel_table_exists(PDO $pdo, string $driver, string $table): bool
     return (bool) $statement->fetchColumn();
 }
 
+function vercel_column_exists(PDO $pdo, string $driver, string $table, string $column): bool
+{
+    if ($driver === 'pgsql') {
+        $statement = $pdo->prepare(
+            'select exists (
+                select 1
+                from information_schema.columns
+                where table_schema = ? and table_name = ? and column_name = ?
+            )'
+        );
+        $statement->execute(['public', $table, $column]);
+
+        return (bool) $statement->fetchColumn();
+    }
+
+    if ($driver === 'mysql') {
+        $statement = $pdo->prepare(
+            'select count(*)
+             from information_schema.columns
+             where table_schema = database() and table_name = ? and column_name = ?'
+        );
+        $statement->execute([$table, $column]);
+
+        return (int) $statement->fetchColumn() > 0;
+    }
+
+    $statement = $pdo->query("pragma table_info({$table})");
+    $columns = $statement ? $statement->fetchAll(PDO::FETCH_ASSOC) : [];
+
+    foreach ($columns as $info) {
+        if (($info['name'] ?? null) === $column) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function vercel_schema_status(PDO $pdo, string $driver): array
+{
+    $checks = [
+        'orders.access_token' => ['orders', 'access_token'],
+        'orders.notes' => ['orders', 'notes'],
+        'orders.rejection_reason' => ['orders', 'rejection_reason'],
+        'payment_receipts.image_public_id' => ['payment_receipts', 'image_public_id'],
+    ];
+    $status = [];
+
+    foreach ($checks as $key => [$table, $column]) {
+        $status[$key] = vercel_table_exists($pdo, $driver, $table)
+            ? vercel_column_exists($pdo, $driver, $table, $column)
+            : false;
+    }
+
+    return $status;
+}
+
 function vercel_database_status(): array
 {
     $config = vercel_database_config();
@@ -154,6 +211,7 @@ function vercel_database_status(): array
             'url_present' => (bool) ($config['url_present'] ?? false),
             'connection' => 'ok',
             'networks_table' => vercel_table_exists($pdo, $config['driver'], 'networks'),
+            'schema' => vercel_schema_status($pdo, $config['driver']),
         ];
     } catch (Throwable $exception) {
         return [

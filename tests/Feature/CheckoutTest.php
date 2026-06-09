@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\CardPackage;
 use App\Models\HotspotCard;
 use App\Models\Network;
+use App\Models\Order;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -36,6 +37,45 @@ class CheckoutTest extends TestCase
 
         $response->assertRedirect(route('store.network', $network->slug));
         $this->assertSame([], session("checkout.{$network->id}", []));
+    }
+
+    public function test_customer_can_submit_checkout_order(): void
+    {
+        config([
+            'services.cloudinary.cloud_name' => 'demo-cloud',
+            'services.cloudinary.api_key' => 'demo-key',
+            'services.cloudinary.api_secret' => 'demo-secret',
+            'services.cloudinary.receipt_folder' => 'network-site/payment-receipts',
+        ]);
+
+        [$network, $package] = $this->storeFixture();
+        $publicId = 'network-site/payment-receipts/net-zone/2026/06/test-receipt';
+
+        $response = $this
+            ->withSession(["checkout.{$network->id}" => [$package->id => 1]])
+            ->post(route('orders.store', $network->slug), [
+                'customer_name' => 'Test Customer',
+                'phone' => '0599000000',
+                'notes' => 'Test note',
+                'receipt_url' => "https://res.cloudinary.com/demo-cloud/image/upload/v1780000000/{$publicId}.jpg",
+                'receipt_public_id' => $publicId,
+                'receipt_original_name' => 'receipt.jpg',
+            ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('orders', [
+            'customer_name' => 'Test Customer',
+            'phone' => '0599000000',
+            'network_id' => $network->id,
+            'total_amount' => 2,
+            'payment_status' => 'pending',
+            'order_status' => 'pending',
+        ]);
+        $this->assertDatabaseHas('payment_receipts', [
+            'image_public_id' => $publicId,
+            'status' => 'pending',
+        ]);
+        $this->assertNotNull(Order::first()?->access_token);
     }
 
     /**
