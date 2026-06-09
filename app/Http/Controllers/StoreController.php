@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Network;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class StoreController extends Controller
@@ -43,12 +44,19 @@ class StoreController extends Controller
         ]);
 
         $network = Network::query()->where('status', 'active')->findOrFail($data['network_id']);
-        $packages = $network->activePackages()->pluck('id')->all();
+        $packages = $network->activePackages()
+            ->withCount('availableCards')
+            ->get()
+            ->keyBy('id');
         $cart = [];
 
         foreach ($data['quantities'] as $packageId => $quantity) {
-            if ((int) $quantity > 0 && in_array((int) $packageId, $packages, true)) {
-                $cart[(int) $packageId] = (int) $quantity;
+            $package = $packages->get((int) $packageId);
+            $availableCards = (int) ($package?->available_cards_count ?? 0);
+            $quantity = (int) $quantity;
+
+            if ($package && $quantity > 0 && $availableCards > 0) {
+                $cart[(int) $package->id] = min($quantity, $availableCards, 100);
             }
         }
 
@@ -65,18 +73,19 @@ class StoreController extends Controller
     {
         abort_if($network->status !== 'active', 404);
 
-        $cart = session("checkout.{$network->id}", []);
+        [$cart, $packages] = $this->checkoutSelection($network, session("checkout.{$network->id}", []));
 
         if ($cart === []) {
+            session()->forget("checkout.{$network->id}");
+
             return redirect()->route('store.network', $network->slug)->with('error', 'اختر البطاقات أولا.');
         }
 
-        $packages = $network->activePackages()
-            ->whereIn('id', array_keys($cart))
-            ->withCount('availableCards')
-            ->get();
+        session(["checkout.{$network->id}" => $cart]);
 
         if ($packages->isEmpty()) {
+            session()->forget("checkout.{$network->id}");
+
             return redirect()->route('store.network', $network->slug)->with('error', 'الباقات المختارة غير متاحة حاليا.');
         }
 
@@ -95,5 +104,55 @@ class StoreController extends Controller
             'summary' => $summary,
             'total' => $summary->sum('subtotal'),
         ]);
+    }
+
+    /**
+     * @return array{0: array<int, int>, 1: Collection<int, \App\Models\CardPackage>}
+     */
+    private function checkoutSelection(Network $network, mixed $rawCart): array
+    {
+        if (! is_array($rawCart)) {
+            return [[], collect()];
+        }
+
+        $packageIds = collect(array_keys($rawCart))
+            ->map(fn (mixed $packageId): int => (int) $packageId)
+            ->filter(fn (int $packageId): bool => $packageId > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($packageIds === []) {
+            return [[], collect()];
+        }
+
+        $packages = $network->activePackages()
+            ->whereIn('id', $packageIds)
+            ->withCount('availableCards')
+            ->get()
+            ->keyBy('id');
+        $cart = [];
+
+        foreach ($rawCart as $packageId => $quantity) {
+            if (! is_scalar($quantity)) {
+                continue;
+            }
+
+            $package = $packages->get((int) $packageId);
+            $quantity = (int) $quantity;
+            $availableCards = (int) ($package?->available_cards_count ?? 0);
+
+            if (! $package || $quantity <= 0 || $availableCards <= 0) {
+                continue;
+            }
+
+            $cart[(int) $package->id] = min($quantity, $availableCards, 100);
+        }
+
+        $selectedPackages = $packages
+            ->filter(fn ($package): bool => array_key_exists((int) $package->id, $cart))
+            ->values();
+
+        return [$cart, $selectedPackages];
     }
 }
