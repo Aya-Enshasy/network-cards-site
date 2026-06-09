@@ -45,54 +45,78 @@ class CardImportService
         $networkPackages = $network->packages()
             ->where('active', true)
             ->get();
+        $preparedRows = [];
 
-        DB::transaction(function () use ($rows, $network, $package, $networkPackages, &$seenInFile, &$imported, &$duplicates, &$failed, &$errors): void {
-            foreach ($rows as $index => $row) {
-                $displayLine = (int) ($row['line'] ?? ($index + 1));
-                $cardCode = $this->cleanCell($row['code'] ?? null);
-                $cardPassword = $this->cleanCell($row['password'] ?? null);
-                $packageLabel = $this->cleanCell($row['package_label'] ?? null);
-                $resolvedPackage = $this->resolvePackage($packageLabel, $networkPackages, $package);
+        foreach ($rows as $index => $row) {
+            $displayLine = (int) ($row['line'] ?? ($index + 1));
+            $cardCode = $this->cleanCell($row['code'] ?? null);
+            $cardPassword = $this->cleanCell($row['password'] ?? null);
+            $packageLabel = $this->cleanCell($row['package_label'] ?? null);
+            $resolvedPackage = $this->resolvePackage($packageLabel, $networkPackages, $package);
 
-                if ($cardCode === '' || $cardPassword === '') {
-                    $failed++;
-                    $errors[] = "السطر {$displayLine}: يجب إدخال رقم البطاقة وكلمة السر معًا.";
-                    continue;
-                }
-
-                $dedupeKey = Str::upper($cardCode);
-
-                if (isset($seenInFile[$dedupeKey])) {
-                    $duplicates++;
-                    $errors[] = "السطر {$displayLine}: رقم البطاقة {$cardCode} مكرر داخل الملف.";
-                    continue;
-                }
-
-                $seenInFile[$dedupeKey] = true;
-
-                $created = HotspotCard::firstOrCreate(
-                    [
-                        'network_id' => $network->id,
-                        'card_code' => $cardCode,
-                    ],
-                    [
-                        'package_id' => $resolvedPackage->id,
-                        'card_password' => $cardPassword,
-                        'package_label' => $packageLabel !== '' ? $packageLabel : null,
-                        'imported_at' => now(),
-                        'status' => 'available',
-                    ],
-                );
-
-                if ($created->wasRecentlyCreated) {
-                    $imported++;
-                    continue;
-                }
-
-                $duplicates++;
-                $errors[] = "السطر {$displayLine}: رقم البطاقة {$cardCode} موجود مسبقًا.";
+            if ($cardCode === '' || $cardPassword === '') {
+                $failed++;
+                $errors[] = "السطر {$displayLine}: يجب إدخال رقم البطاقة وكلمة السر معًا.";
+                continue;
             }
-        });
+
+            $dedupeKey = Str::upper($cardCode);
+
+            if (isset($seenInFile[$dedupeKey])) {
+                $duplicates++;
+                $errors[] = "السطر {$displayLine}: رقم البطاقة {$cardCode} مكرر داخل الملف.";
+                continue;
+            }
+
+            $seenInFile[$dedupeKey] = true;
+            $preparedRows[] = [
+                'line' => $displayLine,
+                'dedupe_key' => $dedupeKey,
+                'network_id' => $network->id,
+                'package_id' => $resolvedPackage->id,
+                'card_code' => $cardCode,
+                'card_password' => $cardPassword,
+                'package_label' => $packageLabel !== '' ? $packageLabel : null,
+                'imported_at' => now(),
+                'status' => 'available',
+            ];
+        }
+
+        if ($preparedRows !== []) {
+            $existingCards = collect(array_column($preparedRows, 'card_code'))
+                ->chunk(500)
+                ->flatMap(fn (Collection $cardCodes): Collection => HotspotCard::query()
+                    ->where('network_id', $network->id)
+                    ->whereIn('card_code', $cardCodes->all())
+                    ->pluck('card_code'))
+                ->mapWithKeys(fn (string $cardCode): array => [Str::upper($cardCode) => true])
+                ->all();
+
+            $newRows = [];
+            $timestamp = now();
+
+            foreach ($preparedRows as $row) {
+                if (isset($existingCards[$row['dedupe_key']])) {
+                    $duplicates++;
+                    $errors[] = "السطر {$row['line']}: رقم البطاقة {$row['card_code']} موجود مسبقًا.";
+                    continue;
+                }
+
+                unset($row['line'], $row['dedupe_key']);
+
+                $newRows[] = [
+                    ...$row,
+                    'created_at' => $timestamp,
+                    'updated_at' => $timestamp,
+                ];
+            }
+
+            foreach (array_chunk($newRows, 300) as $chunk) {
+                $inserted = DB::table('hotspot_cards')->insertOrIgnore($chunk);
+                $imported += (int) $inserted;
+                $duplicates += count($chunk) - (int) $inserted;
+            }
+        }
 
         $history = CardImport::create([
             'network_id' => $network->id,
