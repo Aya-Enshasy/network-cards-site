@@ -4419,6 +4419,49 @@ input[type='file']::file-selector-button {
     line-height: 1.7;
 }
 
+.upload-guidance,
+.upload-status {
+    margin: -0.15rem 0 0;
+    border-radius: var(--nz-radius);
+    font-size: 0.82rem;
+    font-weight: 850;
+    line-height: 1.7;
+}
+
+.upload-guidance {
+    border: 1px dashed var(--nz-line-strong);
+    background: #fbfdff;
+    padding: 0.7rem 0.78rem;
+    color: var(--nz-muted);
+}
+
+.upload-status:not(:empty) {
+    border: 1px solid var(--nz-line);
+    background: #fbfdff;
+    padding: 0.62rem 0.75rem;
+    color: var(--nz-muted);
+}
+
+.upload-status[data-status-type='success'] {
+    border-color: rgba(32, 184, 165, 0.20);
+    background: var(--nz-teal-soft);
+    color: #087d72;
+}
+
+.upload-status[data-status-type='error'] {
+    border-color: rgba(239, 91, 103, 0.18);
+    background: #fff4f5;
+    color: #9f1d2b;
+}
+
+.btn:disabled,
+.btn[aria-disabled='true'] {
+    cursor: not-allowed;
+    filter: grayscale(0.18);
+    opacity: 0.68;
+    box-shadow: none;
+}
+
 /* Store, checkout, customer order pages */
 .shop-shell,
 .premium-shell {

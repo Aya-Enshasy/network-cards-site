@@ -242,7 +242,7 @@
                             <span class="edu-soft-icon"><i data-lucide="upload-cloud"></i></span>
                         </div>
 
-                        <form action="{{ route('dashboard.cards.import') }}" method="POST" enctype="multipart/form-data" class="edu-upload-form">
+                        <form action="{{ route('dashboard.cards.import') }}" method="POST" enctype="multipart/form-data" class="edu-upload-form" data-card-import-form data-max-upload-bytes="4194304">
                             @csrf
                             <input type="hidden" name="network_id" value="{{ $network->id }}">
                             @if($mainPackage)
@@ -256,8 +256,14 @@
 
                             <label class="field upload-drop">
                                 <span>ملف البطاقات</span>
-                                <input name="file" type="file" accept=".xlsx,.xls,.csv" required>
+                                <input name="file" type="file" accept=".xlsx,.xls,.csv" required data-card-import-file>
                             </label>
+
+                            <p class="upload-guidance">
+                                الصيغة المطلوبة: أعمدة Username / Password / Package. الحد الأقصى على Vercel هو 4MB، وللملفات الكبيرة ارفعيها CSV مقسم على دفعات.
+                            </p>
+
+                            <p class="upload-status" data-card-import-status aria-live="polite"></p>
 
                             <button class="btn btn-dark w-full" type="submit">
                                 <i data-lucide="upload-cloud"></i>

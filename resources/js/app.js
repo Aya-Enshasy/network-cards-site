@@ -495,6 +495,70 @@ function setupCloudinaryReceiptUpload() {
     });
 }
 
+function setupCardImportUpload() {
+    document.querySelectorAll('[data-card-import-form]').forEach((form) => {
+        const fileInput = form.querySelector('[data-card-import-file]');
+        const status = form.querySelector('[data-card-import-status]');
+        const submitButton = form.querySelector('button[type="submit"]');
+        const maxBytes = Number.parseInt(form.dataset.maxUploadBytes || '4194304', 10);
+        const allowedExtensions = ['csv', 'xls', 'xlsx'];
+
+        if (!fileInput) {
+            return;
+        }
+
+        const setStatus = (message, type = 'neutral') => {
+            if (!status) {
+                return;
+            }
+
+            status.textContent = message;
+            status.dataset.statusType = type;
+        };
+
+        const formatMegabytes = (bytes) => (bytes / 1024 / 1024).toFixed(bytes >= 1024 * 1024 ? 1 : 2);
+
+        const validateFile = () => {
+            const file = fileInput.files?.[0];
+
+            if (!file) {
+                setStatus('');
+                return true;
+            }
+
+            const extension = file.name.split('.').pop()?.toLowerCase() || '';
+
+            if (!allowedExtensions.includes(extension)) {
+                setStatus('اختاري ملف CSV أو XLSX أو XLS فقط.', 'error');
+                return false;
+            }
+
+            if (maxBytes > 0 && file.size > maxBytes) {
+                setStatus(`حجم الملف ${formatMegabytes(file.size)}MB. على Vercel الحد الأقصى 4MB، قسّمي الملف أو حوّليه CSV أخف.`, 'error');
+                return false;
+            }
+
+            setStatus(`جاهز للرفع: ${file.name} (${formatMegabytes(file.size)}MB).`, 'success');
+            return true;
+        };
+
+        fileInput.addEventListener('change', () => {
+            const isValid = validateFile();
+
+            if (submitButton) {
+                submitButton.disabled = !isValid;
+            }
+        });
+
+        form.addEventListener('submit', (event) => {
+            if (!validateFile()) {
+                event.preventDefault();
+                fileInput.focus();
+            }
+        });
+    });
+}
+
 function setupIcons() {
     createIcons({
         icons: {
@@ -545,6 +609,7 @@ function boot() {
     setupCopyActions();
     setupNotifications();
     setupCloudinaryReceiptUpload();
+    setupCardImportUpload();
     setupIcons();
     Alpine.start();
 }

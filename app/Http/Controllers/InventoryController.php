@@ -9,13 +9,18 @@ use App\Services\CardImportService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Throwable;
 
 class InventoryController extends Controller
 {
+    private const IMPORT_MAX_KILOBYTES = 4096;
+
     public function index(Request $request): View
     {
         $networks = $this->accessibleNetworks();
@@ -135,14 +140,31 @@ class InventoryController extends Controller
         $data = $request->validate([
             'network_id' => ['required', Rule::in($networkIds)],
             'package_id' => ['required', 'exists:packages,id'],
-            'file' => ['required', 'file', 'mimes:xlsx,xls,csv', 'max:10240'],
+            'file' => ['required', 'file', 'mimes:xlsx,xls,csv', 'max:'.self::IMPORT_MAX_KILOBYTES],
         ]);
 
         $network = Network::findOrFail($data['network_id']);
         $package = CardPackage::where('network_id', $network->id)
             ->where('active', true)
             ->findOrFail($data['package_id']);
-        $summary = $importer->import($request->file('file'), $network, $package, auth()->id());
+
+        try {
+            $summary = $importer->import($request->file('file'), $network, $package, auth()->id());
+        } catch (ValidationException $exception) {
+            throw $exception;
+        } catch (Throwable $exception) {
+            Log::error('Card import failed.', [
+                'network_id' => $network->id,
+                'package_id' => $package->id,
+                'user_id' => auth()->id(),
+                'file_name' => $request->file('file')?->getClientOriginalName(),
+                'error' => $exception->getMessage(),
+            ]);
+
+            return back()->withErrors([
+                'file' => 'تعذر استيراد الملف. تأكد أن الملف بصيغة CSV أو XLSX وحجمه أقل من 4MB، ثم جرّب مرة أخرى.',
+            ]);
+        }
 
         return back()
             ->with('success', "تم استيراد {$summary['imported']} بطاقة. المكرر: {$summary['duplicates']}، الفاشل: {$summary['failed']}.")
