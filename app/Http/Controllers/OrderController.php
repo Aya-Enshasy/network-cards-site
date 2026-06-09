@@ -8,7 +8,6 @@ use App\Services\CloudinaryReceiptService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
@@ -80,63 +79,63 @@ class OrderController extends Controller
             return redirect()->route('store.network', $network->slug)->with('error', 'الباقات المختارة غير متاحة حاليًا.');
         }
 
+        $order = null;
+
         try {
-            $order = DB::transaction(function () use ($network, $packages, $cart, $data) {
-                $total = 0;
+            $total = 0;
 
-                foreach ($cart as $packageId => $quantity) {
-                    $package = $packages->get((int) $packageId);
+            foreach ($cart as $packageId => $quantity) {
+                $package = $packages->get((int) $packageId);
 
-                    if ($package) {
-                        $total += $package->price * $quantity;
-                    }
+                if ($package) {
+                    $total += $package->price * $quantity;
+                }
+            }
+
+            $orderData = [
+                'order_number' => $this->newOrderNumber($network),
+                'access_token' => $this->newAccessToken(),
+                'customer_name' => $data['customer_name'],
+                'phone' => $data['phone'],
+                'notes' => $data['notes'] ?? null,
+                'network_id' => $network->id,
+                'total_amount' => $total,
+                'payment_status' => 'pending',
+                'order_status' => 'pending',
+            ];
+
+            $order = Order::create($orderData);
+
+            foreach ($cart as $packageId => $quantity) {
+                $package = $packages->get((int) $packageId);
+
+                if (! $package) {
+                    continue;
                 }
 
-                $orderData = [
-                    'order_number' => $this->newOrderNumber($network),
-                    'access_token' => $this->newAccessToken(),
-                    'customer_name' => $data['customer_name'],
-                    'phone' => $data['phone'],
-                    'notes' => $data['notes'] ?? null,
-                    'network_id' => $network->id,
-                    'total_amount' => $total,
-                    'payment_status' => 'pending',
-                    'order_status' => 'pending',
-                ];
+                $order->items()->create([
+                    'package_id' => $package->id,
+                    'quantity' => $quantity,
+                    'price' => $package->price,
+                    'subtotal' => $package->price * $quantity,
+                ]);
+            }
 
-                $order = Order::create($orderData);
+            $receiptData = [
+                'image' => $data['receipt_url'],
+                'notes' => $data['notes'] ?? null,
+                'status' => 'pending',
+            ];
 
-                foreach ($cart as $packageId => $quantity) {
-                    $package = $packages->get((int) $packageId);
+            if (Schema::hasColumn('payment_receipts', 'image_public_id')) {
+                $receiptData['image_public_id'] = $data['receipt_public_id'];
+            }
 
-                    if (! $package) {
-                        continue;
-                    }
-
-                    $order->items()->create([
-                        'package_id' => $package->id,
-                        'quantity' => $quantity,
-                        'price' => $package->price,
-                        'subtotal' => $package->price * $quantity,
-                    ]);
-                }
-
-                $receiptData = [
-                    'image' => $data['receipt_url'],
-                    'notes' => $data['notes'] ?? null,
-                    'status' => 'pending',
-                ];
-
-                if (Schema::hasColumn('payment_receipts', 'image_public_id')) {
-                    $receiptData['image_public_id'] = $data['receipt_public_id'];
-                }
-
-                $order->receipt()->create($receiptData);
-
-                return $order;
-            });
+            $order->receipt()->create($receiptData);
         } catch (Throwable $exception) {
             report($exception);
+
+            $order?->delete();
 
             if ($this->allowsOrderDebug($request)) {
                 $messages = [];
